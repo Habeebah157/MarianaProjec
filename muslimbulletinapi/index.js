@@ -41,6 +41,7 @@ app.use("/events", require("./routes/events.js"));
 app.use("/question_votes", require("./routes/question_votes.js"));
 app.use("/api/google", require("./routes/google.js")(oauth2Client));
 app.use("/eventquestion", require("./routes/eventquestion.js"))
+app.use("/eventquestionanswer", require("./routes/eventquestionanswer.js"))
 
 console.log('GOOGLE_CLIENT_ID:', process.env.GOOGLE_CLIENT_ID);
 console.log('GOOGLE_CLIENT_SECRET:', process.env.GOOGLE_CLIENT_SECRET);

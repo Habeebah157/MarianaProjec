@@ -36,6 +36,7 @@ router.post("/", authorization, async (req, res) => {
 
 router.get("/:eventId", authorization, async (req, res) => {
   const { eventId } = req.params;
+  const currentUserId = req.user.id;
 
   try {
     if (!eventId) {
@@ -47,20 +48,50 @@ router.get("/:eventId", authorization, async (req, res) => {
          q.id,
          q.question,
          q.created_at,
-         u.name AS user_name
+         u.user_name AS user_name,
+         q.user_id
        FROM event_questions q
        LEFT JOIN users u ON q.user_id = u.id
        WHERE q.event_id = $1
-       ORDER BY q.created_at ASC`,
+       ORDER BY q.created_at ASC;`,
       [eventId]
     );
 
+    const questionsWithCanDelete = result.rows.map((row) => ({
+      ...row,
+      canDelete: row.user_id === currentUserId,
+    }));
+
     res.json({
       success: true,
-      data: result.rows,
+      data: questionsWithCanDelete,
     });
   } catch (err) {
     console.error("Error fetching event questions:", err.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+
+router.delete("/:questionId", authorization, async (req, res) => {
+  const { questionId } = req.params;
+  const userId = req.user.id;
+
+  try {
+    const result = await pool.query(
+      `DELETE FROM event_questions 
+       WHERE id = $1 AND user_id = $2
+       RETURNING *`,
+      [questionId, userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(403).json({ error: "Unauthorized or question not found" });
+    }
+
+    res.json({ success: true, message: "Question deleted" });
+  } catch (err) {
+    console.error("Error deleting question:", err.message);
     res.status(500).json({ error: "Internal server error" });
   }
 });
