@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
@@ -8,7 +8,7 @@ import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
 import RSVP from "../RSVP/RSVP";
 
-// Fix Leaflet marker icons
+// Leaflet marker fix
 const eventMarkerIcon = new L.Icon({
   iconRetinaUrl: markerIcon2x,
   iconUrl: markerIcon,
@@ -52,61 +52,161 @@ export default function EventDetail() {
   const location = useLocation();
   const navigate = useNavigate();
   const [comments, setComments] = useState([]);
+  const [answers, setAnswers] = useState([]);
   const [newComment, setNewComment] = useState("");
-  const [replies, setReplies] = useState({});
   const [replyInputs, setReplyInputs] = useState({});
+  const [replies, setReplies] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [isSubmittingReply, setIsSubmittingReply] = useState(false);
 
   const passedEvents = location.state?.eventData || [];
   const event = passedEvents.find((e) => String(e.id) === eventId);
 
   const handleBack = () => navigate("/events");
 
+  useEffect(() => {
+    const fetchComments = async () => {
+      try {
+        const res = await fetch(`http://localhost:9000/eventquestion/${eventId}`, {
+          headers: {
+            token: localStorage.token,
+          },
+        });
+        const json = await res.json();
+        if (json.success) {
+          setComments(json.data);
+        } else {
+          console.error("Failed to load comments:", json.message || "Unknown error");
+        }
+      } catch (err) {
+        console.error("Error fetching event questions:", err);
+      }
+    };
+
+    const fetchAnswers = async () => {
+      try {
+        const res = await fetch(`http://localhost:9000/eventquestionanswer/${eventId}`, {
+          headers: {
+            token: localStorage.token,
+          },
+        });
+        const json = await res.json();
+        if (json.success) {
+          setAnswers(json.data);
+        } else {
+          console.error("Failed to load answers:", json.message || "Unknown error");
+        }
+      } catch (err) {
+        console.error("Error fetching answers:", err);
+      }
+    };
+
+    if (eventId) {
+      fetchComments();
+      fetchAnswers();
+    }
+  }, [eventId]);
+
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      const requestBody = {
-        question: newComment,
-        eventId
-      };
-
       const res = await fetch(`http://localhost:9000/eventquestion`, {
         method: "POST",
         headers: {
+          "Content-Type": "application/json",
           token: localStorage.token,
-          "Content-Type": "application/json"
         },
-        body: JSON.stringify(requestBody)
+        body: JSON.stringify({
+          question: newComment,
+          eventId: eventId,
+        }),
       });
 
-      const returnjson = await res.json();
+      const responseData = await res.json();
 
-      if (returnjson.success) {
-        alert("Question saved successfully");
+      if (!res.ok) {
+        throw new Error(responseData.message || "Failed to submit question");
+      }
 
-        const savedComment = returnjson.data;
-
-        setComments(prev => [
-          ...prev,
-          {
-            id: savedComment.id,
-            question: savedComment.question,
-            created_at: savedComment.created_at,
-            user_name: savedComment.user_name || "Anonymous"
-          }
-        ]);
-
+      if (responseData.success) {
+        const res = await fetch(`http://localhost:9000/eventquestion/${eventId}`, {
+          headers: {
+            token: localStorage.token,
+          },
+        });
+        const json = await res.json();
+        if (json.success) {
+          setComments(json.data);
+        }
         setNewComment("");
       } else {
-        alert("Failed to save question");
+        alert(responseData.message || "Failed to submit question");
       }
     } catch (err) {
-      console.error("This is a problem", err);
-      alert("An error occurred while submitting your comment");
+      console.error("Error submitting question:", err);
+      alert(err.message || "An error occurred while submitting your question");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleAnswerSubmit = async (e, questionId) => {
+    e.preventDefault();
+    const answerText = replyInputs[questionId]?.trim();
+    if (!answerText) return;
+    setIsSubmittingReply(true);
+
+    try {
+      // Optimistic update
+      const tempId = Date.now().toString();
+      setReplies(prev => ({
+        ...prev,
+        [questionId]: [
+          ...(prev[questionId] || []),
+          { id: tempId, text: answerText, question_id: questionId }
+        ]
+      }));
+
+      const res = await fetch(`http://localhost:9000/eventquestionanswer/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          token: localStorage.token,
+        },
+        body: JSON.stringify({
+          question_id: questionId,
+          answer: answerText,
+        }),
+      });
+
+      const responseData = await res.json();
+
+      if (!res.ok) {
+        throw new Error(responseData.message || "Failed to submit answer");
+      }
+
+      if (responseData.success) {
+        // Update with real ID from server
+        setReplies(prev => ({
+          ...prev,
+          [questionId]: prev[questionId].map(reply => 
+            reply.id === tempId ? responseData.data : reply
+          )
+        }));
+        setReplyInputs(prev => ({ ...prev, [questionId]: "" }));
+      }
+    } catch (err) {
+      console.error("Error submitting answer:", err);
+      // Rollback optimistic update
+      setReplies(prev => ({
+        ...prev,
+        [questionId]: prev[questionId].filter(reply => reply.id !== tempId)
+      }));
+      alert(err.message || "An error occurred while submitting your answer");
+    } finally {
+      setIsSubmittingReply(false);
     }
   };
 
@@ -114,16 +214,28 @@ export default function EventDetail() {
     setReplyInputs((prev) => ({ ...prev, [commentId]: value }));
   };
 
-  const handleReplySubmit = (e, commentId) => {
-    e.preventDefault();
-    const replyText = replyInputs[commentId]?.trim();
-    if (!replyText) return;
+  const handleDelete = async (commentId) => {
+    if (!window.confirm("Are you sure you want to delete this comment?")) return;
 
-    setReplies((prev) => ({
-      ...prev,
-      [commentId]: [...(prev[commentId] || []), replyText],
-    }));
-    setReplyInputs((prev) => ({ ...prev, [commentId]: "" }));
+    try {
+      const res = await fetch(`http://localhost:9000/eventquestion/${commentId}`, {
+        method: "DELETE",
+        headers: {
+          token: localStorage.token,
+        },
+      });
+
+      const json = await res.json();
+
+      if (json.success) {
+        setComments((prev) => prev.filter((c) => c.id !== commentId));
+      } else {
+        alert("Failed to delete comment");
+      }
+    } catch (err) {
+      console.error("Error deleting comment:", err);
+      alert("An error occurred while deleting the comment");
+    }
   };
 
   if (!event) {
@@ -169,18 +281,14 @@ export default function EventDetail() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-gray-700">
             <div className="flex items-center space-x-4">
-              <div className="p-3 bg-indigo-50 rounded-xl text-indigo-600">
-                📅
-              </div>
+              <div className="p-3 bg-indigo-50 rounded-xl text-indigo-600">📅</div>
               <div>
                 <p className="text-xs uppercase font-semibold">Date</p>
                 <p className="text-lg font-semibold">{formatDateWithOrdinal(event.start_time)}</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <div className="p-3 bg-indigo-50 rounded-xl text-indigo-600">
-                ⏰
-              </div>
+              <div className="p-3 bg-indigo-50 rounded-xl text-indigo-600">⏰</div>
               <div>
                 <p className="text-xs uppercase font-semibold">Time</p>
                 <p className="text-lg font-semibold">
@@ -189,20 +297,15 @@ export default function EventDetail() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <div className="p-3 bg-indigo-50 rounded-xl text-indigo-600">
-                📍
-              </div>
+              <div className="p-3 bg-indigo-50 rounded-xl text-indigo-600">📍</div>
               <div>
                 <p className="text-xs uppercase font-semibold">Location</p>
-                <address className="not-italic text-lg font-semibold">{event.location || "Online / TBD"}</address>
+                <address className="not-italic text-lg font-semibold">
+                  {event.location || "Online / TBD"}
+                </address>
               </div>
             </div>
           </div>
-
-          <section className="mt-8 text-gray-800">
-            <h2 className="text-2xl font-bold mb-3">About the Event</h2>
-            <p>{event.description || "No description provided."}</p>
-          </section>
 
           {event.latitude && event.longitude && (
             <MapContainer
@@ -232,13 +335,12 @@ export default function EventDetail() {
                 rows={3}
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                disabled={isLoading}
                 required
               />
               <button
                 type="submit"
-                disabled={isLoading}
-                className="mt-3 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                disabled={isLoading || !newComment.trim()}
+                className="mt-3 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-indigo-400"
               >
                 {isLoading ? "Submitting..." : "Submit"}
               </button>
@@ -246,29 +348,65 @@ export default function EventDetail() {
 
             <div className="space-y-6">
               {comments.length === 0 && (
-                <p className="text-gray-500 italic">No comments yet. Be the first!</p>
+                <p className="text-gray-500 italic">No questions yet. Be the first!</p>
               )}
-              {comments.map(({ id, question, created_at, user_name }) => (
-                <article key={id} className="p-5 border rounded-lg shadow-sm bg-gray-50">
-                  <div className="flex justify-between mb-2">
-                    <h3 className="font-semibold text-indigo-800">{user_name}</h3>
-                    <time className="text-xs text-gray-500 font-mono">
-                      {new Date(created_at).toLocaleDateString()}
-                    </time>
-                  </div>
-                  <p className="mb-4">{question}</p>
+              {comments.map(({ id, question, created_at, user_name, canDelete }) => {
+                const questionAnswers = answers.filter((a) => a.question_id === id);
+                const questionReplies = replies[id] || [];
 
-                  <div className="ml-6 space-y-3">
-                    {(replies[id] || []).map((reply, i) => (
-                      <div
-                        key={i}
-                        className="px-4 py-2 bg-indigo-100 rounded-lg text-indigo-900 text-sm"
-                      >
-                        {reply}
+                return (
+                  <article key={id} className="p-5 border rounded-lg shadow-sm bg-gray-50">
+                    <div className="flex justify-between mb-2">
+                      <h3 className="font-semibold text-indigo-800">{user_name}</h3>
+                      <div className="flex items-center gap-3">
+                        <time className="text-xs text-gray-500 font-mono">
+                          {new Date(created_at).toLocaleDateString()}
+                        </time>
+                        {canDelete && (
+                          <button
+                            onClick={() => handleDelete(id)}
+                            className="text-red-500 text-xs font-semibold hover:underline"
+                          >
+                            Delete
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <p className="mb-4">{question}</p>
+
+                    {/* Answers from backend */}
+                    <div className="ml-4 space-y-2">
+                      {questionAnswers.map(({ id: answerId, answer, user_name, is_official }) => (
+                        <div
+                          key={answerId}
+                          className={`p-3 rounded-md text-sm ${
+                            is_official
+                              ? "bg-blue-100 border border-blue-400 text-blue-900 font-semibold"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          <strong>{user_name}{is_official ? " (Official)" : ""}:</strong> {answer}
+                          <div className="text-xs text-gray-500 mt-1">
+                            Answer ID: {answerId} | Question ID: {id}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Local replies (optimistic updates) */}
+                    {questionReplies.map((reply) => (
+                      <div key={reply.id} className="ml-4 mt-2 px-4 py-2 bg-indigo-100 rounded-lg text-indigo-900 text-sm">
+                        <div>You: {reply.text}</div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          Reply ID: {reply.id} | Question ID: {id}
+                        </div>
                       </div>
                     ))}
 
-                    <form onSubmit={(e) => handleReplySubmit(e, id)} className="mt-2 flex gap-3">
+                    <form
+                      onSubmit={(e) => handleAnswerSubmit(e, id)}
+                      className="mt-4 flex gap-3"
+                    >
                       <input
                         type="text"
                         className="flex-grow rounded-lg border border-gray-300 p-2 focus:ring-2 focus:ring-indigo-400"
@@ -278,15 +416,15 @@ export default function EventDetail() {
                       />
                       <button
                         type="submit"
-                        className="px-4 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-                        disabled={!replyInputs[id]?.trim()}
+                        disabled={isSubmittingReply || !replyInputs[id]?.trim()}
+                        className="px-4 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-indigo-400"
                       >
-                        Reply
+                        {isSubmittingReply ? "Posting..." : "Reply"}
                       </button>
                     </form>
-                  </div>
-                </article>
-              ))}
+                  </article>
+                );
+              })}
             </div>
           </section>
         </article>
