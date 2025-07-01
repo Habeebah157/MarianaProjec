@@ -51,10 +51,32 @@ router.post("/", authorization, async (req, res) => {
   }
 });
 
+router.get("/:eventId", authorization, async (req, res) => {
+  try {
+    const { eventId } = req.params;
+
+    // Join answers with questions to filter by event_id
+    const answersRes = await pool.query(`
+  SELECT a.id, a.question_id, a.user_id, a.answer, a.is_official, a.created_at,
+         u.user_name AS user_name
+  FROM event_questions_answers a
+  JOIN event_questions q ON a.question_id = q.id
+  LEFT JOIN users u ON a.user_id = u.id
+  WHERE q.event_id = $1
+  ORDER BY a.created_at ASC
+`, [eventId]);
+
+    res.json({ success: true, data: answersRes.rows });
+  } catch (err) {
+    console.error("Error fetching answers:", err.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 
 // // GET /event-questions-answers/:question_id
 // // Get all answers for a question
-// router.get("/:question_id", async (req, res) => {
+// router.get("/:event", async (req, res) => {
 //   try {
 //     const { question_id } = req.params;
 
