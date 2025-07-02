@@ -7,7 +7,6 @@ router.post("/", authorization, async (req, res) => {
   const user_id = req.user.id;
 
   try {
-    // Step 1: Insert the RSVP
     const insertResult = await pool.query(
       `INSERT INTO event_attendees (event_id, user_id, is_going, rsvp_at)
        VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
@@ -40,18 +39,45 @@ router.get("/event-attendees/:eventId", async (req, res) => {
 
   try {
     const result = await pool.query(
-      `SELECT ea.*, u.name AS user_name
-       FROM event_attendees ea
-       JOIN users u ON ea.user_id = u.id
-       WHERE ea.event_id = $1`,
-      [eventId]
-    );
+  `SELECT ea.*, u.user_name
+   FROM event_attendees ea
+   JOIN users u ON ea.user_id = u.id
+   WHERE ea.event_id = $1`,
+  [eventId]
+);
     res.json({ success: true, data: result.rows });
   } catch (err) {
     console.error("Error fetching attendees:", err);
     res.status(500).json({ success: false, message: "Failed to get attendees" });
   }
 });
+
+
+router.get("/event-attendees/:eventId/user/:userId/has-answered", async (req, res) => {
+  const { eventId, userId } = req.params;
+
+  try {
+    const result = await pool.query(
+      `SELECT has_answered 
+       FROM event_attendees
+       WHERE event_id = $1 AND user_id = $2`,
+      [eventId, userId]
+    );
+
+    if (result.rows.length === 0) {
+      // No RSVP found for this user on this event
+      return res.json({ success: true, has_answered: false });
+    }
+
+    res.json({ success: true, has_answered: result.rows[0].has_answered });
+  } catch (err) {
+    console.error("Error checking if user has answered:", err);
+    res.status(500).json({ success: false, message: "Failed to check answer status" });
+  }
+});
+
+
+
 
 
 module.exports = router;
