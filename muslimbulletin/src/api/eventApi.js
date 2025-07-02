@@ -11,3 +11,24 @@ export async function fetchEventAnswers(eventId) {
     throw error;
   }
 }
+
+export async function submitRSVP({ eventId, isGoing }) {
+  try {
+    const res = await fetch('http://localhost:9000/eventattendees', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        token: localStorage.token, // assuming auth is handled
+      },
+      body: JSON.stringify({
+        event_id: eventId,
+        is_going: isGoing,
+      }),
+    });
+
+    return await res.json();
+  } catch (err) {
+    console.error('Error submitting RSVP:', err);
+    return { success: false };
+  }
+}

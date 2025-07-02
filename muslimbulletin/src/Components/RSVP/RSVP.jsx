@@ -1,18 +1,37 @@
 import React, { useState } from 'react';
+import { submitRSVP } from '../../api/eventApi'; // Adjust path if needed
 
-export default function RSVP() {
+export default function RSVP({ eventId }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [attending, setAttending] = useState('');
+  const [attending, setAttending] = useState(''); // will hold string "true" or "false"
   const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log({ name, email, attending });
-    setSubmitted(true);
-    setName('');
-    setEmail('');
-    setAttending('');
+
+    // Convert string "true" or "false" to boolean true/false
+    const isGoing = attending === 'true';
+
+    try {
+      const json = await submitRSVP({
+        eventId,
+        isGoing, // send boolean value to backend
+      });
+
+      if (json.success) {
+        console.log('RSVP submitted:', { name, email, isGoing });
+        setSubmitted(true);
+        setName('');
+        setEmail('');
+        setAttending('');
+      } else {
+        alert('There was a problem submitting your RSVP.');
+      }
+    } catch (err) {
+      console.error('RSVP error:', err);
+      alert('An error occurred. Please try again.');
+    }
   };
 
   if (submitted) {
@@ -74,9 +93,8 @@ export default function RSVP() {
           <option value="" disabled>
             Please select an option
           </option>
-          <option value="yes">Yes, I’ll be there</option>
-          <option value="no">No, can’t make it</option>
-          <option value="maybe">Maybe, not sure yet</option>
+          <option value="true">Yes, I’ll be there</option>
+          <option value="false">No, can’t make it</option>
         </select>
       </div>
 
