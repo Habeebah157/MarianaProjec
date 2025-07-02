@@ -2,25 +2,37 @@ const router = require("express").Router();
 const pool = require("../db.js");
 const authorization = require("../middleware/authorization.js");
 
-
-// POST /event-attendees
-router.post("/event-attendees", async (req, res) => {
+router.post("/", authorization, async (req, res) => {
   const { event_id, is_going } = req.body;
-  const user_id = req.user.id; // Assuming user is authenticated and available in req.user
+  const user_id = req.user.id;
 
   try {
-    const result = await pool.query(
+    // Step 1: Insert the RSVP
+    const insertResult = await pool.query(
       `INSERT INTO event_attendees (event_id, user_id, is_going, rsvp_at)
        VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
-       RETURNING *`,
+       RETURNING id`,
       [event_id, user_id, is_going]
     );
+
+    const rsvpId = insertResult.rows[0].id;
+
+    // Step 2: Fetch the RSVP and user name
+    const result = await pool.query(
+      `SELECT ea.*, u.user_name
+       FROM event_attendees ea
+       JOIN users u ON ea.user_id = u.id
+       WHERE ea.id = $1`,
+      [rsvpId]
+    );
+
     res.json({ success: true, data: result.rows[0] });
   } catch (err) {
     console.error("Error adding RSVP:", err);
     res.status(500).json({ success: false, message: "Failed to RSVP" });
   }
 });
+
 
 // GET /event-attendees/:eventId
 router.get("/event-attendees/:eventId", async (req, res) => {
@@ -42,3 +54,4 @@ router.get("/event-attendees/:eventId", async (req, res) => {
 });
 
 
+module.exports = router;
