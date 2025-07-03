@@ -5,18 +5,18 @@ const authorization = require("../middleware/authorization.js");
 router.post("/", authorization, async (req, res) => {
   const { event_id, is_going } = req.body;
   const user_id = req.user.id;
+  console.log(user_id)
 
   try {
     const insertResult = await pool.query(
-      `INSERT INTO event_attendees (event_id, user_id, is_going, rsvp_at)
-       VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
+      `INSERT INTO event_attendees (event_id, user_id, is_going, has_answered, rsvp_at)
+       VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
        RETURNING id`,
-      [event_id, user_id, is_going]
+      [event_id, user_id, is_going, true] // 👈 set has_answered to true
     );
 
     const rsvpId = insertResult.rows[0].id;
 
-    // Step 2: Fetch the RSVP and user name
     const result = await pool.query(
       `SELECT ea.*, u.user_name
        FROM event_attendees ea
@@ -53,8 +53,10 @@ router.get("/event-attendees/:eventId", async (req, res) => {
 });
 
 
-router.get("/event-attendees/:eventId/user/:userId/has-answered", async (req, res) => {
-  const { eventId, userId } = req.params;
+router.get("/event-attendees/:eventId/user/has-answered", authorization, async (req, res) => {
+  const { eventId} = req.params;
+  const userId = req.user.id;
+  console.log(userId)
 
   try {
     const result = await pool.query(
