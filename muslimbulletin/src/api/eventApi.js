@@ -14,7 +14,7 @@ export async function fetchEventAnswers(eventId) {
 
 export async function submitRSVP({ eventId, isGoing }) {
   try {
-    const res = await fetch('http://localhost:9000/eventattendees', {
+    const res = await fetch('http://localhost:9000/eventAttendance', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -25,10 +25,35 @@ export async function submitRSVP({ eventId, isGoing }) {
         is_going: isGoing,
       }),
     });
+  
 
     return await res.json();
   } catch (err) {
     console.error('Error submitting RSVP:', err);
+    return { success: false };
+  }
+}
+
+export async function checkIfUserHasAnswered({ eventId }) {
+  try {                         
+    const res = await fetch(`http://localhost:9000/eventAttendance/event-attendees/${eventId}/user/has-answered`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        token: localStorage.token, // Optional: if your backend uses token auth
+      },
+    });
+
+    const data = await res.json();
+    console.log("DATA", data)
+
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to fetch answer status');
+    }
+
+    return data; // { success: true, has_answered: true/false }
+  } catch (err) {
+    console.error('Error checking RSVP status:', err);
     return { success: false };
   }
 }
