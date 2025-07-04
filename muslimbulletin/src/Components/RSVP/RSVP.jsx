@@ -49,8 +49,17 @@ export default function RSVP({ eventId }) {
 
   if (hasAnswered || submitted) {
     return (
-      <div className="max-w-sm mx-auto mt-12 p-8 bg-green-50 border border-green-300 rounded-lg shadow-lg text-center text-green-800 font-semibold text-lg">
-        Thanks for your RSVP! We look forward to seeing you.
+      <div className="max-w-sm mx-auto mt-12 p-8 bg-green-50 border border-green-300 rounded-lg shadow-lg text-center text-green-800 font-semibold text-lg space-y-4">
+        <p>Thanks for your RSVP! We look forward to seeing you.</p>
+        <button
+          type="button"
+          className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 rounded-lg shadow-md transition-colors duration-300"
+          onClick={() => {
+            /* Placeholder: Implement change RSVP logic here */
+          }}
+        >
+          Change RSVP
+        </button>
       </div>
     );
   }

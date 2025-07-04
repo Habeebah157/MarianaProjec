@@ -19,6 +19,7 @@ import UserProfile from "./Components/UserProfile/UserProfile";
 import NewEvent from "./Components/NewEvent/NewEvent";
 import EventDetail from "./Components/EventDetail/EventDetail";
 import PrayerTime from "./Components/PrayerTime/PrayerTime";
+import NotificationBells from "./Components/NotificationBells/NotificationBells";
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(true);
 
@@ -69,6 +70,7 @@ function App() {
                 Your one-stop solution for all your community needs.
               </p>
               <PrayerTime />
+              <NotificationBells/>
               {/* <Question /> */}
               <Community />
               <Businesses />
