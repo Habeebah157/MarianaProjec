@@ -2,9 +2,12 @@ import js from "@eslint/js";
 import globals from "globals";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
+import eslintPluginJest from "eslint-plugin-jest";
 
 export default [
   { ignores: ["dist"] },
+
+  // ✅ Main app config
   {
     files: ["**/*.{js,jsx}"],
     languageOptions: {
@@ -28,6 +31,22 @@ export default [
         "warn",
         { allowConstantExport: true },
       ],
+    },
+  },
+
+  // ✅ Jest config for test files
+  {
+    files: ["**/*.test.{js,jsx}", "**/__tests__/**/*.{js,jsx}"],
+    languageOptions: {
+      globals: {
+        ...globals.jest,
+      },
+    },
+    plugins: {
+      jest: eslintPluginJest,
+    },
+    rules: {
+      ...eslintPluginJest.configs.recommended.rules,
     },
   },
 ];
