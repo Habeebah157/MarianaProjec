@@ -80,33 +80,47 @@ const businessData = {
     },
   ],
 };
+
 export function BusinessTab() {
   const [activeTab, setActiveTab] = useState("Cafes");
   const [searchQuery, setSearchQuery] = useState("");
 
   const handleSearch = (e) => setSearchQuery(e.target.value.toLowerCase());
 
+  const handleAddBusiness = () => {
+    alert("Add Business form will appear here!");
+  };
+
   const filteredBusinesses = businessData[activeTab].filter((business) =>
-    business.name.toLowerCase().includes(searchQuery),
+    business.name.toLowerCase().includes(searchQuery)
   );
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
-      {/* Tabs */}
-      <div className="flex space-x-4 mb-6">
-        {Object.keys(businessData).map((category) => (
-          <button
-            key={category}
-            onClick={() => setActiveTab(category)}
-            className={`px-4 py-2 font-semibold rounded-full transition ${
-              activeTab === category
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-            }`}
-          >
-            {category}
-          </button>
-        ))}
+      {/* Tabs & Add Business */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
+        <div className="flex space-x-2 sm:space-x-4">
+          {Object.keys(businessData).map((category) => (
+            <button
+              key={category}
+              onClick={() => setActiveTab(category)}
+              className={`px-4 py-2 font-semibold rounded-full transition ${
+                activeTab === category
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              }`}
+            >
+              {category}
+            </button>
+          ))}
+        </div>
+
+        <button
+          onClick={handleAddBusiness}
+          className="px-4 py-2 bg-green-600 text-white font-semibold rounded shadow hover:bg-green-700 transition"
+        >
+          + Add Business
+        </button>
       </div>
 
       {/* Search Bar */}
@@ -118,7 +132,7 @@ export function BusinessTab() {
         className="w-full border border-gray-300 rounded p-3 mb-6"
       />
 
-      {/* Cards */}
+      {/* Business Cards */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredBusinesses.map((business) => (
           <div
@@ -137,7 +151,7 @@ export function BusinessTab() {
               </p>
               <a
                 href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                  business.address,
+                  business.address
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
