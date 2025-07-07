@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { addBusiness } from "../../api/businessesApi";
 
 const daysOfWeek = [
   "Monday",
@@ -20,7 +21,6 @@ const Modal = ({ show, onClose }) => {
   const [address, setAddress] = useState("");
   const [shipping, setShipping] = useState(false);
 
-  // hours: an object where each day has { closed: bool, open: "HH:mm", close: "HH:mm" }
   const [hours, setHours] = useState(
     daysOfWeek.reduce((acc, day) => {
       acc[day] = { closed: false, open: "09:00", close: "17:00" };
@@ -50,7 +50,7 @@ const Modal = ({ show, onClose }) => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     const businessData = {
@@ -65,8 +65,18 @@ const Modal = ({ show, onClose }) => {
       shipping,
     };
 
-    console.log("Submitting business data:", businessData);
-    onClose();
+    try {
+      const response = await addBusiness(businessData);
+      if (response.success) {
+        console.log("Business added:", response.data);
+        onClose();
+      } else {
+        alert(response.message || "Failed to add business");
+      }
+    } catch (err) {
+      console.error("Add business error:", err);
+      alert("Something went wrong.");
+    }
   };
 
   return (
@@ -134,7 +144,6 @@ const Modal = ({ show, onClose }) => {
               <option value="Cafes">Cafes</option>
               <option value="Groceries">Groceries</option>
               <option value="Services">Services</option>
-              {/* Add more if needed */}
             </select>
           </div>
 

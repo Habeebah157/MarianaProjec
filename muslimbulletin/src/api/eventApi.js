@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE = ''; // empty because of proxy "http://localhost:9000" in package.json
+const API_BASE = 'http://localhost:9000/'; // empty because of proxy "http://localhost:9000" in package.json
 
 export async function fetchEventAnswers(eventId) {
   try {
@@ -14,7 +14,7 @@ export async function fetchEventAnswers(eventId) {
 
 export async function submitRSVP({ eventId, isGoing }) {
   try {
-    const res = await fetch('http://localhost:9000/eventAttendance', {
+    const res = await fetch(`${API_BASE}eventAttendance`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

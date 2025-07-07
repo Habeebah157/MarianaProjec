@@ -1,99 +1,45 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Modal from "../Modal/Modal";
-
-const businessData = {
-  Cafes: [
-    {
-      id: 1,
-      name: "Subset Cafe",
-      category: "Coffee Shop",
-      distance: 0.3,
-      address: "123 Main St, City, State",
-      contact: "123-456-7890",
-      hours: "Mon-Fri 2am–5pm",
-      image:
-        "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=600&q=80",
-      shipping: true,
-    },
-    {
-      id: 2,
-      name: "Brew & Bean",
-      category: "Cafe",
-      distance: 0.5,
-      address: "456 Bean St, City, State",
-      contact: "555-234-6789",
-      hours: "Daily 7am–7pm",
-      image:
-        "https://images.unsplash.com/photo-1511920170033-f8396924c348?auto=format&fit=crop&w=600&q=80",
-      shipping: false,
-    },
-  ],
-  Groceries: [
-    {
-      id: 3,
-      name: "GreenMart",
-      category: "Grocery Store",
-      distance: 1.2,
-      address: "789 Market Rd, City, State",
-      contact: "987-654-3210",
-      hours: "Mon-Sun 8am–9pm",
-      image:
-        "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=600&q=80",
-      shipping: true,
-    },
-    {
-      id: 4,
-      name: "Fresh Basket",
-      category: "Organic Market",
-      distance: 0.9,
-      address: "12 Orchard Ave, City, State",
-      contact: "321-654-0987",
-      hours: "Mon-Fri 10am–6pm",
-      image:
-        "https://images.unsplash.com/photo-1466637574441-749b8f19452f?auto=format&fit=crop&w=600&q=80",
-      shipping: false,
-    },
-  ],
-  Services: [
-    {
-      id: 5,
-      name: "FixIt Electronics",
-      category: "Electronics Repair",
-      distance: 2.1,
-      address: "101 Circuit St, City, State",
-      contact: "888-777-6666",
-      hours: "Mon-Fri 9am–5pm",
-      image:
-        "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=600&q=80",
-      shipping: false,
-    },
-    {
-      id: 6,
-      name: "Quick Clean",
-      category: "Dry Cleaning",
-      distance: 1.5,
-      address: "202 Clean Ave, City, State",
-      contact: "222-333-4444",
-      hours: "Mon-Sat 9am–6pm",
-      image:
-        "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?auto=format&fit=crop&w=600&q=80",
-      shipping: true,
-    },
-  ],
-};
+import { getBusinesses } from "../../api/businessesApi";
 
 export function BusinessTab() {
-  const [activeTab, setActiveTab] = useState("Cafes");
+  const [activeTab, setActiveTab] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [businessesByCategory, setBusinessesByCategory] = useState({});
+
+  // ✅ Fetch businesses on mount
+  useEffect(() => {
+    async function fetchData() {
+      const result = await getBusinesses();
+      console.log(result);
+      if (result.success) {
+        const grouped = result.data.reduce((acc, business) => {
+          const cat = business.category || "Uncategorized";
+          if (!acc[cat]) acc[cat] = [];
+          acc[cat].push(business);
+          return acc;
+        }, {});
+        setBusinessesByCategory(grouped);
+        if (!activeTab && Object.keys(grouped).length > 0) {
+          setActiveTab(Object.keys(grouped)[0]);
+        }
+      } else {
+        console.error(result.message);
+      }
+    }
+
+    fetchData();
+  }, []);
 
   const handleSearch = (e) => setSearchQuery(e.target.value.toLowerCase());
   const handleAddBusiness = () => setShowModal(true);
   const handleCloseModal = () => setShowModal(false);
 
-  const filteredBusinesses = businessData[activeTab].filter((business) =>
-    business.name.toLowerCase().includes(searchQuery)
-  );
+  const filteredBusinesses =
+    businessesByCategory[activeTab]?.filter((business) =>
+      business.name.toLowerCase().includes(searchQuery)
+    ) || [];
 
   const getTimeInMinutes = (distance) => {
     const avgSpeed = 30; // mph
@@ -111,7 +57,7 @@ export function BusinessTab() {
       {/* Tabs & Add Business */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
         <div className="flex space-x-2 sm:space-x-4">
-          {Object.keys(businessData).map((category) => (
+          {Object.keys(businessesByCategory).map((category) => (
             <button
               key={category}
               onClick={() => setActiveTab(category)}
@@ -146,24 +92,28 @@ export function BusinessTab() {
       {/* Business Cards */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredBusinesses.map((business) => {
-          const time = getTimeInMinutes(business.distance);
+          const time = getTimeInMinutes(business.distance || 1);
           const timeColor = getTimeColor(time);
           return (
             <div
               key={business.id}
               className="bg-white rounded-xl shadow-md overflow-hidden flex flex-col"
             >
-              <img
-                src={business.image}
-                alt={business.name}
-                className="h-48 w-full object-cover"
-              />
+         <img
+  src={business.image?.trim() || "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop"}
+  onError={(e) => {
+    e.target.onerror = null;
+    e.target.src = "https://images.unsplash.com/photo-1445116572660-236099ec97a0?w=400&h=300&fit=crop";
+  }}
+  alt={business.name}
+  className="h-48 w-full object-cover"
+/>
               <div className="p-4 flex flex-col flex-grow">
                 <h3 className="text-xl font-bold mb-1">{business.name}</h3>
                 <p className={`mb-1 ${timeColor}`}>
                   {business.category}
                   <span className="text-sm ml-1">
-                    • {business.distance} mi • ~{time} min
+                    • {business.distance || "N/A"} mi • ~{time} min
                   </span>
                 </p>
                 <a
@@ -178,11 +128,20 @@ export function BusinessTab() {
                 </a>
                 <p className="text-sm text-gray-800 mb-1">
                   Contact:{" "}
-                  <a href={`tel:${business.contact}`} className="text-blue-700">
-                    {business.contact}
+                  <a
+                    href={`tel:${business.phone}`}
+                    className="text-blue-700"
+                  >
+                    {business.phone}
                   </a>
                 </p>
-                <p className="text-sm text-gray-800 mb-2">{business.hours}</p>
+                <p className="text-sm text-gray-800 mb-2">
+                  {typeof business.hours === "object"
+                    ? Object.entries(business.hours)
+                        .map(([day, hours]) => `${day}: ${hours}`)
+                        .join(", ")
+                    : business.hours}
+                </p>
                 <div className="mt-auto flex justify-between items-center">
                   <div className="flex items-center text-green-600 text-sm">
                     {business.shipping ? (
