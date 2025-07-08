@@ -8,7 +8,6 @@ export function BusinessTab() {
   const [showModal, setShowModal] = useState(false);
   const [businessesByCategory, setBusinessesByCategory] = useState({});
 
-  // ✅ Fetch businesses on mount
   useEffect(() => {
     async function fetchData() {
       const result = await getBusinesses();
@@ -51,6 +50,16 @@ export function BusinessTab() {
     if (minutes <= 40) return "text-yellow-600";
     return "text-red-600";
   };
+
+  const orderedDays = [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+  ];
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
@@ -99,15 +108,19 @@ export function BusinessTab() {
               key={business.id}
               className="bg-white rounded-xl shadow-md overflow-hidden flex flex-col"
             >
-         <img
-  src={business.image?.trim() || "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop"}
-  onError={(e) => {
-    e.target.onerror = null;
-    e.target.src = "https://images.unsplash.com/photo-1445116572660-236099ec97a0?w=400&h=300&fit=crop";
-  }}
-  alt={business.name}
-  className="h-48 w-full object-cover"
-/>
+              <img
+                src={
+                  business.image?.trim() ||
+                  "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop"
+                }
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src =
+                    "https://images.unsplash.com/photo-1445116572660-236099ec97a0?w=400&h=300&fit=crop";
+                }}
+                alt={business.name}
+                className="h-48 w-full object-cover"
+              />
               <div className="p-4 flex flex-col flex-grow">
                 <h3 className="text-xl font-bold mb-1">{business.name}</h3>
                 <p className={`mb-1 ${timeColor}`}>
@@ -128,20 +141,25 @@ export function BusinessTab() {
                 </a>
                 <p className="text-sm text-gray-800 mb-1">
                   Contact:{" "}
-                  <a
-                    href={`tel:${business.phone}`}
-                    className="text-blue-700"
-                  >
+                  <a href={`tel:${business.phone}`} className="text-blue-700">
                     {business.phone}
                   </a>
                 </p>
-                <p className="text-sm text-gray-800 mb-2">
+                <div className="text-sm text-gray-800 mb-2 space-y-1">
                   {typeof business.hours === "object"
-                    ? Object.entries(business.hours)
-                        .map(([day, hours]) => `${day}: ${hours}`)
-                        .join(", ")
+                    ? orderedDays.map((day) => {
+                        const dayHours = business.hours[day];
+                        if (!dayHours) return null;
+                        const { open, close, closed } = dayHours;
+                        return (
+                          <div key={day}>
+                            <strong>{day}:</strong>{" "}
+                            {closed ? "Closed" : `${open} - ${close}`}
+                          </div>
+                        );
+                      })
                     : business.hours}
-                </p>
+                </div>
                 <div className="mt-auto flex justify-between items-center">
                   <div className="flex items-center text-green-600 text-sm">
                     {business.shipping ? (
