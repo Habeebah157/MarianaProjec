@@ -29,10 +29,12 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-
+// Middleware to check for allowed roles
 function requireRole(...allowedRoles) {
   return (req, res, next) => {
-    if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
     if (!allowedRoles.includes(req.user.member_type)) {
       return res.status(403).json({ message: `Access denied: ${req.user.member_type}` });
     }
@@ -40,7 +42,4 @@ function requireRole(...allowedRoles) {
   };
 }
 
-// router.get('/admin-only', verifyToken, requireRole('admin'), handler);
-// router.get('/mods-and-admins', verifyToken, requireRole('admin', 'moderator'), handler);
-
-module.exports = { verifyToken, requireAdmin };
+module.exports = { verifyToken, requireAdmin, requireRole };

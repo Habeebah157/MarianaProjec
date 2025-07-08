@@ -1,9 +1,9 @@
 const router = require("express").Router();
 const pool = require("../db.js");
-const authorization = require("../middleware/authorization.js");
+const {verifyToken} = require("../middleware/authorization.js");
 
 // POST /businesses - Create new business
-router.post("/", authorization, async (req, res) => {
+router.post("/", verifyToken, async (req, res) => {
   const { name, description, category, website, email, phone, address, hours, shipping } = req.body;
   const user_id = req.user.id;
   try {

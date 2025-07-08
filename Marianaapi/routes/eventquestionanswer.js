@@ -1,12 +1,12 @@
 const express = require("express");
 const router = express.Router();
-const authorization = require("../middleware/authorization");
+const {verifyToken} = require("../middleware/authorization");
 const pool = require("../db");
 
 // POST /event-questions-answers
 // Create a new answer for a question
 // POST /eventquestionanswer
-router.post("/", authorization, async (req, res) => {
+router.post("/", verifyToken, async (req, res) => {
   try {
     const { question_id, answer } = req.body;
     const user_id = req.user?.id;
@@ -51,7 +51,7 @@ router.post("/", authorization, async (req, res) => {
   }
 });
 
-router.get("/:eventId", authorization, async (req, res) => {
+router.get("/:eventId", verifyToken, async (req, res) => {
   try {
     const { eventId } = req.params;
 

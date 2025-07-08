@@ -1,9 +1,9 @@
 const router = require("express").Router();
 const pool = require("../db.js");
-const authorization = require("../middleware/authorization.js");
+const {verifyToken}= require("../middleware/authorization.js");
 
 // Get authenticated user's data
-router.get("/", authorization, async (req, res) => {
+router.get("/", verifyToken, async (req, res) => {
   try {
     return res.json(req.user);
   } catch (err) {

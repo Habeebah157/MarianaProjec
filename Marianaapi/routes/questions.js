@@ -1,13 +1,13 @@
 const express = require("express");
 const router = express.Router();
-const authorization = require("../middleware/authorization");
+const {verifyToken} = require("../middleware/authorization");
 const pool = require("../db.js");
 
 // Import controller if you're using MVC pattern
 // const questionController = require('../controllers/questionController');
 
 // GET all questions
-router.get("/", authorization, async (req, res) => {
+router.get("/", verifyToken, async (req, res) => {
   try {
     const { rows } = await pool.query(`
       SELECT 
@@ -45,7 +45,7 @@ router.get("/", authorization, async (req, res) => {
     });
   }
 });
-router.get("/user/:userId/questions", authorization, async (req, res) => {
+router.get("/user/:userId/questions", verifyToken, async (req, res) => {
   try {
     const userId = req.params.userId;
 
@@ -89,7 +89,7 @@ router.get("/user/:userId/questions", authorization, async (req, res) => {
 
 
 // POST a new question
-router.post("/question", authorization, async (req, res) => {
+router.post("/question", verifyToken, async (req, res) => {
   try {
     const { title, body } = req.body;
     const userId = req.user.id; // Get the user ID from the authenticated user
@@ -133,7 +133,7 @@ router.post("/question", authorization, async (req, res) => {
 
 // PUT/PATCH update a question
 // GET a specific question with edit permissions info
-router.get("/:id", authorization, async (req, res) => {
+router.get("/:id", verifyToken, async (req, res) => {
   const { id } = req.params;
   const userId = req.user.id;
 
@@ -187,7 +187,7 @@ router.get("/:id", authorization, async (req, res) => {
   }
 });
 
-router.patch("/:id", authorization, async (req, res) => {
+router.patch("/:id", verifyToken, async (req, res) => {
   const questionId = req.params.id;
   const userId = req.user.id;
   const { title, body } = req.body;
@@ -226,7 +226,7 @@ router.patch("/:id", authorization, async (req, res) => {
 });
 
 // DELETE a question
-router.delete("/:id", authorization, async (req, res) => {
+router.delete("/:id", verifyToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const questionId = req.params.id;

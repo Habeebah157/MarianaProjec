@@ -1,10 +1,10 @@
 const express = require("express");
 const router = express.Router();
-const authorization = require("../middleware/authorization");
+const {verifyToken} = require("../middleware/authorization");
 const pool = require("../db.js");
 const { createEvent } = require('ics');
 
-router.get("/", authorization, async (req, res) => {
+router.get("/", verifyToken, async (req, res) => {
   try {
     const currentUserId = req.user.id;
 
@@ -35,7 +35,7 @@ router.get("/", authorization, async (req, res) => {
 
 
 
-router.get("/user/:userId", authorization, async (req, res) => {
+router.get("/user/:userId", verifyToken, async (req, res) => {
   try {
     const userId = req.params.userId;
     const currentUserId = req.user.id;
@@ -73,7 +73,7 @@ router.get("/user/:userId", authorization, async (req, res) => {
   }
 });
 
-router.post("/", authorization, async (req, res) => {
+router.post("/", verifyToken, async (req, res) => {
   const userId = req.user.id;
   const { title, description, location, start_time, end_time } = req.body;
 
@@ -116,7 +116,7 @@ router.post("/", authorization, async (req, res) => {
 });
 
 
-router.get("/:id", authorization, async (req, res) => {
+router.get("/:id", verifyToken, async (req, res) => {
   try {
     const eventId = parseInt(req.params.id);
     const currentUserId = req.user.id;
@@ -162,7 +162,7 @@ router.get("/:id", authorization, async (req, res) => {
   }
 });
 
-router.patch("/:id", authorization, async (req, res) => {
+router.patch("/:id", verifyToken, async (req, res) => {
   try {
     const eventId = parseInt(req.params.id);
     const userId = req.user.id;
@@ -222,7 +222,7 @@ router.patch("/:id", authorization, async (req, res) => {
 
 
 
-router.delete("/:id", authorization, async (req, res) => {
+router.delete("/:id", verifyToken, async (req, res) => {
   try {
     const eventId = parseInt(req.params.id);
     const userId = req.user.id;

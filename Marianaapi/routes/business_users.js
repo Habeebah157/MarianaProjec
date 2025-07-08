@@ -1,9 +1,9 @@
 const router = require("express").Router();
 const pool = require("../db.js");
-const authorization = require("../middleware/authorization.js");
+const {verifyToken} = require("../middleware/authorization.js");
 
 // POST /business-users - Add user to business
-router.post("/", authorization, async (req, res) => {
+router.post("/", verifyToken, async (req, res) => {
   const { business_id, user_id, role } = req.body;
 
   try {
@@ -42,7 +42,7 @@ router.get("/:business_id", async (req, res) => {
 });
 
 // PUT /business-users/:id - Update user role
-router.put("/:id", authorization, async (req, res) => {
+router.put("/:id", verifyToken, async (req, res) => {
   const { id } = req.params;
   const { role } = req.body;
 
@@ -67,7 +67,7 @@ router.put("/:id", authorization, async (req, res) => {
 });
 
 // DELETE /business-users/:id - Remove user from business
-router.delete("/:id", authorization, async (req, res) => {
+router.delete("/:id", verifyToken, async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -88,7 +88,7 @@ router.delete("/:id", authorization, async (req, res) => {
 });
 
 // GET /business-users/:business_id/check - Check if user is member
-router.get("/:business_id/check", authorization, async (req, res) => {
+router.get("/:business_id/check", verifyToken, async (req, res) => {
   const { business_id } = req.params;
   const user_id = req.user.id;
 

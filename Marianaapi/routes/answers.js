@@ -1,9 +1,9 @@
 const express = require("express");
 const router = express.Router();
-const authorization = require("../middleware/authorization");
+const {verifyToken} = require("../middleware/authorization");
 const pool = require("../db.js");
 // GET all comments for a specific question
-router.get("/question/:questionId", authorization, async (req, res) => {
+router.get("/question/:questionId", verifyToken, async (req, res) => {
   try {
     const questionId = parseInt(req.params.questionId);
     const currentUserId = req.user.id; // Assuming your authorization middleware sets req.user
@@ -62,7 +62,7 @@ router.get("/question/:questionId", authorization, async (req, res) => {
 //   }
 // });
 
-router.post("/", authorization, async (req, res) => {
+router.post("/", verifyToken, async (req, res) => {
   const userId = req.user.id;
   const { body, question_id } = req.body;
 
@@ -106,13 +106,13 @@ router.post("/", authorization, async (req, res) => {
 });
 
 // GET a specific comment by ID
-router.get("/:id", authorization, async (req, res) => {
+router.get("/:id", verifyToken, async (req, res) => {
   // Get a single comment by comment ID
 });
 
 // PATCH/UPDATE a specific comment
 // PATCH/UPDATE a specific comment
-router.patch("/:id", authorization, async (req, res) => {
+router.patch("/:id", verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
     const { body } = req.body;
@@ -168,7 +168,7 @@ router.patch("/:id", authorization, async (req, res) => {
   }
 });
 // DELETE a specific comment
-router.delete("/:id", authorization, async (req, res) => {
+router.delete("/:id", verifyToken, async (req, res) => {
   try {
     const { id } = req.params; // The answer ID to delete
     const userId = req.user.id; // From your authorization middleware

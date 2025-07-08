@@ -1,8 +1,8 @@
 const router = require("express").Router();
 const pool = require("../db.js");
-const authorization = require("../middleware/authorization.js");
+const {verifyToken} = require("../middleware/authorization.js");
 
-router.post("/", authorization, async (req, res) => {
+router.post("/", verifyToken, async (req, res) => {
   const { event_id, is_going } = req.body;
   const user_id = req.user.id;
   console.log(user_id)
@@ -53,7 +53,7 @@ router.get("/event-attendees/:eventId", async (req, res) => {
 });
 
 
-router.get("/event-attendees/:eventId/user/has-answered", authorization, async (req, res) => {
+router.get("/event-attendees/:eventId/user/has-answered", verifyToken, async (req, res) => {
   const { eventId} = req.params;
   const userId = req.user.id;
   console.log(userId)

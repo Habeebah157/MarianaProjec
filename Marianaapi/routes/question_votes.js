@@ -1,10 +1,10 @@
 const express = require("express");
 const router = express.Router();
-const authorization = require("../middleware/authorization.js");
+const {verifyToken} = require("../middleware/authorization.js");
 const pool = require("../db.js");
 
 // POST /votes - cast a vote
-router.post('/', authorization, async (req, res) => {
+router.post('/', verifyToken, async (req, res) => {
   try {
     const { question_id, vote } = req.body; // vote should be 'like' or 'dislike'
     const user_id = req.user.id;

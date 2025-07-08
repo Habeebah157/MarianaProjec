@@ -1,9 +1,9 @@
 const express = require("express");
 const router = express.Router();
-const authorization = require("../middleware/authorization");
+const {verifyToken} = require("../middleware/authorization");
 const pool = require("../db");
 
-router.post("/", authorization, async (req, res) => {
+router.post("/", verifyToken, async (req, res) => {
   try {
     
     const { eventId, question } = req.body;
@@ -34,7 +34,7 @@ router.post("/", authorization, async (req, res) => {
 });
 
 
-router.get("/:eventId", authorization, async (req, res) => {
+router.get("/:eventId", verifyToken, async (req, res) => {
   const { eventId } = req.params;
   const currentUserId = req.user.id;
 
@@ -73,7 +73,7 @@ router.get("/:eventId", authorization, async (req, res) => {
 });
 
 
-router.delete("/:questionId", authorization, async (req, res) => {
+router.delete("/:questionId", verifyToken, async (req, res) => {
   const { questionId } = req.params;
   const userId = req.user.id;
 
