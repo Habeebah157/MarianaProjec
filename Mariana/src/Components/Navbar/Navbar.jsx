@@ -1,7 +1,5 @@
 import React from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Link } from "react-router-dom";
-import App from "../../App";
 
 function Navbar({ isAuthenticated, setAuth }) {
   function onClick() {
@@ -17,39 +15,20 @@ function Navbar({ isAuthenticated, setAuth }) {
       <div>
         {isAuthenticated ? (
           <ul className="flex space-x-4">
-            <li>
-              <Link to="/">Home</Link>
-            </li>
-            <li>
-              <Link to="/question">Questions</Link>
-            </li>
-            <li>
-              <Link to="/events">Events</Link>
-            </li>
-            <li>
-              <Link to="/businesses">Businesses</Link>
-            </li>
-            <button onClick={onClick}>
-              <li>Log Out</li>
-            </button>
+            <li><Link to="/">Home</Link></li>
+            <li><Link to="/question">Questions</Link></li>
+            <li><Link to="/events">Events</Link></li>
+            <li><Link to="/businesses">Businesses</Link></li>
+            <li><Link to="/messages">Messages</Link></li> {/* ✅ Added this */}
+            <button onClick={onClick}><li>Log Out</li></button>
           </ul>
         ) : (
           <ul className="flex space-x-4">
-            <li>
-              <Link to="/">Home</Link>
-            </li>
-            <li>
-              <Link to="/question">Questions</Link>
-            </li>
-            <li>
-              <Link to="/events">Events</Link>
-            </li>
-            <li>
-              <Link to="/businesses">Businesses</Link>
-            </li>
-            <li>
-              <Link to="/SignUp">Signup</Link>
-            </li>
+            <li><Link to="/">Home</Link></li>
+            <li><Link to="/question">Questions</Link></li>
+            <li><Link to="/events">Events</Link></li>
+            <li><Link to="/businesses">Businesses</Link></li>
+            <li><Link to="/SignUp">Signup</Link></li>
           </ul>
         )}
       </div>

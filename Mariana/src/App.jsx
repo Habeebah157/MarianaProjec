@@ -20,6 +20,8 @@ import NewEvent from "./Components/NewEvent/NewEvent";
 import EventDetail from "./Components/EventDetail/EventDetail";
 import PrayerTime from "./Components/PrayerTime/PrayerTime";
 import NotificationBells from "./Components/NotificationBells/NotificationBells";
+import ChatComponent from "./Components/ChatComponent/ChatComponent";
+import Messages from "./Components/Messages/Message";
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(true);
 
@@ -151,6 +153,10 @@ function App() {
             )
           }
         />
+        <Route
+        path="/messages"
+        element={isAuthenticated ? <Messages /> : <Navigate to="/" replace />}
+      />
 
         {/* <Route path="/events" element={props => <Events {...props} />} /> */}
         {/* <Route path="/businesses" render={props => <BusinessTab {...props}/>} /> */}
