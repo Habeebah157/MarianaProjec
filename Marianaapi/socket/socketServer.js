@@ -1,24 +1,32 @@
 const { Server } = require("socket.io");
 
 function initializeSocket(server, pool) {
+  if (!pool) {
+    throw new Error("PostgreSQL pool is undefined. Cannot initialize socket server.");
+  }
+
   const io = new Server(server, { cors: { origin: "*" } });
 
-  // Maps userId to socket.id for sending messages
   const onlineUsers = new Map();
 
   io.on("connection", (socket) => {
     console.log("User connected:", socket.id);
 
-    // User registers their userId after connection
     socket.on("register", (userId) => {
+      if (!userId) {
+        console.warn("No userId provided on register");
+        return;
+      }
       onlineUsers.set(userId, socket.id);
       console.log("User registered:", userId);
     });
 
-    // Listen for send_message event from sender
     socket.on("send_message", async ({ senderId, receiverId, content }) => {
       try {
-        // Save message to DB
+        if (!senderId || !receiverId || !content) {
+          throw new Error("Missing required message fields");
+        }
+
         const result = await pool.query(
           `INSERT INTO messages (sender_id, receiver_id, content) 
            VALUES ($1, $2, $3) RETURNING *`,
@@ -26,21 +34,18 @@ function initializeSocket(server, pool) {
         );
         const message = result.rows[0];
 
-        // Emit message to receiver if online
         const receiverSocketId = onlineUsers.get(receiverId);
         if (receiverSocketId) {
           io.to(receiverSocketId).emit("receive_message", message);
         }
 
-        // Also send back confirmation to sender (optional)
         socket.emit("message_sent", message);
       } catch (error) {
-        console.error("Error saving message:", error);
+        console.error("Error saving message:", error.message || error);
         socket.emit("error", "Failed to send message");
       }
     });
 
-    // Handle disconnect
     socket.on("disconnect", () => {
       for (const [userId, sockId] of onlineUsers.entries()) {
         if (sockId === socket.id) {
