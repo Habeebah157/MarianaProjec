@@ -54,6 +54,7 @@ app.use("/eventquestionanswer", require("./routes/eventquestionanswer.js"));
 app.use("/eventAttendance", require("./routes/event_attendees.js"));
 app.use("/businesses", require("./routes/businesses.js"));
 app.use("/business-users", require("./routes/business_users.js"));
+app.use("/messages", require("./routes/messages.js"))
 
 // Debug logs
 console.log("🔍 PGUSER from jwtAuth:", process.env.PGUSER);

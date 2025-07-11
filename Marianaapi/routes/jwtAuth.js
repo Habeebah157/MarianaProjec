@@ -3,7 +3,7 @@ const pool = require("../db.js");
 const bcrypt = require("bcrypt");
 const jwtGenerator = require("../utils/jwtGenerator.js");
 const validInfo = require("../middleware/validinfo.js");
-// const authorization = require("../middleware/authorization.js");
+const {verifyToken} = require("../middleware/authorization.js");
 
 router.post("/register", validInfo, async (req, res) => {
   try {
@@ -65,12 +65,11 @@ router.post("/login", validInfo, async (req, res) => {
     res.status(500).send("Server error");
   }
 });
-// router.get("/verify", authorization, (req, res) => {
-//   try {
-//     res.json(true);
-//   } catch (err) {
-//     console.error(err.message);
-//     res.status(500).json({ error: "Server Error" });
-//   }
-// });
+
+router.get("/api/me", verifyToken, (req, res) => {
+  const userId = req.user.id;
+  // You can return user data or fetch more from DB if needed
+  res.json({ id: userId, email: req.user.user_email });
+});
+
 module.exports = router;
