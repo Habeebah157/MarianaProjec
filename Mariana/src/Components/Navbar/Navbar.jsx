@@ -8,31 +8,77 @@ function Navbar({ isAuthenticated, setAuth }) {
   }
 
   return (
-    <div className="flex justify-between items-center bg-gray-800 text-white p-4">
-      <div>
-        <h1>Mariana Community</h1>
+    <nav className="fixed top-0 left-0 h-full w-56 bg-gray-800 text-white flex flex-col">
+      {/* Logo / title */}
+      <div className="p-6 text-xl font-bold border-b border-gray-700">
+        Mariana Community
       </div>
-      <div>
+
+      {/* Navigation Links */}
+      <ul className="flex flex-col mt-4 space-y-2 px-4">
+        <li>
+          <Link
+            to="/"
+            className="block px-3 py-2 rounded hover:bg-gray-700"
+          >
+            Home
+          </Link>
+        </li>
+        <li>
+          <Link
+            to="/question"
+            className="block px-3 py-2 rounded hover:bg-gray-700"
+          >
+            Questions
+          </Link>
+        </li>
+        <li>
+          <Link
+            to="/events"
+            className="block px-3 py-2 rounded hover:bg-gray-700"
+          >
+            Events
+          </Link>
+        </li>
+        <li>
+          <Link
+            to="/businesses"
+            className="block px-3 py-2 rounded hover:bg-gray-700"
+          >
+            Businesses
+          </Link>
+        </li>
         {isAuthenticated ? (
-          <ul className="flex space-x-4">
-            <li><Link to="/">Home</Link></li>
-            <li><Link to="/question">Questions</Link></li>
-            <li><Link to="/events">Events</Link></li>
-            <li><Link to="/businesses">Businesses</Link></li>
-            <li><Link to="/messages">Messages</Link></li> {/* ✅ Added this */}
-            <button onClick={onClick}><li>Log Out</li></button>
-          </ul>
+          <>
+            <li>
+              <Link
+                to="/messages"
+                className="block px-3 py-2 rounded hover:bg-gray-700"
+              >
+                Messages
+              </Link>
+            </li>
+            <li>
+              <button
+                onClick={onClick}
+                className="w-full text-left px-3 py-2 rounded hover:bg-red-700 bg-red-600"
+              >
+                Log Out
+              </button>
+            </li>
+          </>
         ) : (
-          <ul className="flex space-x-4">
-            <li><Link to="/">Home</Link></li>
-            <li><Link to="/question">Questions</Link></li>
-            <li><Link to="/events">Events</Link></li>
-            <li><Link to="/businesses">Businesses</Link></li>
-            <li><Link to="/SignUp">Signup</Link></li>
-          </ul>
+          <li>
+            <Link
+              to="/SignUp"
+              className="block px-3 py-2 rounded hover:bg-gray-700"
+            >
+              Signup
+            </Link>
+          </li>
         )}
-      </div>
-    </div>
+      </ul>
+    </nav>
   );
 }
 
