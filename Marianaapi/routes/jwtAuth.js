@@ -72,4 +72,12 @@ router.get("/api/me", verifyToken, (req, res) => {
   res.json({ id: userId, email: req.user.user_email });
 });
 
+router.get("/verify", verifyToken, (req, res) => {
+  try {
+    res.json(true);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ error: "Server Error" });
+  }
+});
 module.exports = router;
