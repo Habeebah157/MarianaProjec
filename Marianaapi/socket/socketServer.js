@@ -13,6 +13,7 @@ function initializeSocket(server, pool) {
     console.log("User connected:", socket.id);
 
     socket.on("register", (userId) => {
+      console.log("Received register event with userId:", userId);
       if (!userId) {
         console.warn("No userId provided on register");
         return;

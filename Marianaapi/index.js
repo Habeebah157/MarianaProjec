@@ -70,7 +70,7 @@ app.get("/", (req, res) => {
 
 // Error handler
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  console.log('Incoming request:', req.method, req.url);
   res.status(500).json({ error: err.message });
 });
 
