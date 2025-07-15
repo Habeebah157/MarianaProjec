@@ -48,6 +48,13 @@ function Navbar({ isAuthenticated, setAuth }) {
             Businesses
           </Link>
         </li>
+        <li>
+          <Link 
+          to="/community"
+          className="block px-3 py-2 rounded hover:bg-gray-700">
+            Community
+          </Link>
+        </li>
         {isAuthenticated ? (
           <>
             <li>

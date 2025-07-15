@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { io } from "socket.io-client";
 
 const ChatComponent = ({ userId }) => {
   const [users, setUsers] = useState([]);
@@ -7,87 +8,196 @@ const ChatComponent = ({ userId }) => {
   const [newMessage, setNewMessage] = useState("");
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [sending, setSending] = useState(false);
+  const [error, setError] = useState("");
 
+  const socketRef = useRef(null);
   const messagesEndRef = useRef(null);
 
-  // Fetch users (conversations)
+  const [isRecording, setIsRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState(null);
+  const [audioChunks, setAudioChunks] = useState([]);
+
+  // Fetch users on load or userId change
   useEffect(() => {
     if (!userId) return;
 
     const fetchUsers = async () => {
       try {
-        const res = await fetch(`http://localhost:9000/messages/${userId}/conversations`, {
-          headers: { token: localStorage.token },
-        });
+        const res = await fetch(
+          `http://localhost:9000/messages/${userId}/conversations`,
+          {
+            headers: { token: localStorage.token },
+          }
+        );
+        if (!res.ok) throw new Error("Failed to fetch users");
         const data = await res.json();
         setUsers(data);
       } catch (err) {
         console.error("Failed to fetch users", err);
+        setError("Failed to load users.");
       }
     };
 
     fetchUsers();
   }, [userId]);
 
-  // Fetch messages with selected user
+  // Fetch messages when selectedUserId changes
   useEffect(() => {
     if (!selectedUserId) {
       setMessages([]);
       return;
     }
 
+    const controller = new AbortController();
+    const signal = controller.signal;
+
     const fetchMessages = async () => {
       setLoadingMessages(true);
+      setError("");
       try {
         const res = await fetch(
-          `http://localhost:9000/messages/${userId}/conversation/${selectedUserId}`,
-          { headers: { token: localStorage.token } }
+          `http://localhost:9000/messages/${userId}/${selectedUserId}`,
+          {
+            headers: { token: localStorage.token },
+            signal,
+          }
         );
+        if (!res.ok) throw new Error("Failed to fetch messages");
         const data = await res.json();
         setMessages(data);
       } catch (err) {
-        console.error("Failed to fetch messages", err);
+        if (err.name !== "AbortError") {
+          console.error("Failed to fetch messages", err);
+          setError("Failed to load messages.");
+        }
       } finally {
         setLoadingMessages(false);
       }
     };
 
     fetchMessages();
+
+    return () => controller.abort();
   }, [selectedUserId, userId]);
 
-  // Scroll to bottom when messages change
+  // Setup Socket.IO connection
+  useEffect(() => {
+    if (!userId) return;
+
+    socketRef.current = io("http://localhost:9000");
+
+    socketRef.current.emit("register", userId);
+
+    socketRef.current.on("receive_message", (message) => {
+      if (
+        (message.sender_id === selectedUserId && message.receiver_id === userId) ||
+        (message.sender_id === userId && message.receiver_id === selectedUserId)
+      ) {
+        setMessages((prev) => [...prev, message]);
+      }
+    });
+
+    socketRef.current.on("message_sent", (message) => {
+      setMessages((prev) => [...prev, message]);
+      setNewMessage("");
+      setSending(false);
+    });
+
+    socketRef.current.on("error", (msg) => {
+      setError(msg);
+      setSending(false);
+    });
+
+    return () => {
+      socketRef.current.disconnect();
+    };
+  }, [userId, selectedUserId]);
+
+  // Scroll to bottom on messages change
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
 
-  // Handle sending new message
-  const handleSendMessage = async () => {
-    if (!newMessage.trim()) return;
+  // Send text message via socket
+  const handleSendMessage = () => {
+    if (!newMessage.trim() || !socketRef.current) return;
 
     setSending(true);
+    setError("");
+
+    socketRef.current.emit("send_message", {
+      senderId: userId,
+      receiverId: selectedUserId,
+      content: newMessage.trim(),
+    });
+  };
+
+  // Start recording voice note
+  const startRecording = async () => {
+    if (!navigator.mediaDevices) {
+      alert("Your browser does not support audio recording.");
+      return;
+    }
     try {
-      const res = await fetch(`http://localhost:9000/messages/send`, {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      recorder.ondataavailable = (e) => {
+        setAudioChunks((prev) => [...prev, e.data]);
+      };
+      recorder.start();
+      setMediaRecorder(recorder);
+      setAudioChunks([]);
+      setIsRecording(true);
+    } catch (err) {
+      alert("Microphone access denied or not available.");
+      console.error(err);
+    }
+  };
+
+  // Stop recording and upload voice note
+  const stopRecording = () => {
+    if (!mediaRecorder) return;
+    mediaRecorder.stop();
+    setIsRecording(false);
+    mediaRecorder.onstop = async () => {
+      const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+      await uploadVoiceNote(audioBlob);
+    };
+  };
+
+  // Upload voice note audio blob to backend
+  const uploadVoiceNote = async (blob) => {
+    if (!selectedUserId) {
+      alert("Select a user to send voice note.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("voiceNote", blob, "voice_note.webm");
+    formData.append("receiverId", selectedUserId);
+
+    try {
+      setSending(true);
+      setError("");
+
+      const res = await fetch(`http://localhost:9000/messages/${userId}/send-voice`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           token: localStorage.token,
         },
-        body: JSON.stringify({
-          senderId: userId,
-          receiverId: selectedUserId,
-          text: newMessage.trim(),
-        }),
+        body: formData,
       });
 
-      if (!res.ok) throw new Error("Failed to send message");
+      if (!res.ok) throw new Error("Failed to upload voice note");
+      const message = await res.json();
 
-      const sentMessage = await res.json();
-      setMessages(prev => [...prev, sentMessage]);
-      setNewMessage("");
+      // Optionally add message immediately (socket.io should also push)
+      setMessages((prev) => [...prev, message]);
     } catch (err) {
-      alert(err.message);
+      console.error(err);
+      setError("Failed to send voice note");
     } finally {
       setSending(false);
     }
@@ -116,39 +226,74 @@ const ChatComponent = ({ userId }) => {
         </ul>
       </div>
 
-      {/* Chat tab / content */}
       <div className="flex-grow p-6 flex flex-col">
         {!selectedUser ? (
           <p className="text-gray-400">Select a user to start chatting</p>
         ) : (
           <>
-            <h3 className="text-xl font-bold mb-4">Chat with {selectedUser.user_name}</h3>
+            <h3 className="text-xl font-bold mb-4">
+              Chat with {selectedUser.user_name}
+            </h3>
 
             <div
               className="flex-grow overflow-auto border rounded p-3 mb-4"
               style={{ maxHeight: "18rem" }}
             >
+              {error && <div className="text-red-600 mb-2">{error}</div>}
               {loadingMessages ? (
                 <p>Loading messages...</p>
               ) : messages.length === 0 ? (
                 <p className="text-gray-500">No messages yet.</p>
               ) : (
-                messages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={`my-1 p-2 rounded max-w-xs ${
-                      msg.senderId === userId ? "bg-green-200 self-end" : "bg-gray-200 self-start"
-                    }`}
-                    style={{ alignSelf: msg.senderId === userId ? "flex-end" : "flex-start" }}
-                  >
-                    {msg.text}
-                    <div className="text-xs text-gray-600 mt-1">
-                      {new Date(msg.created_at).toLocaleTimeString()}
+                messages.map((msg) => {
+                  const isSentByLoggedInUser = msg.sender_id === userId;
+                  return (
+                    <div
+                      key={msg.id}
+                      className={`my-1 p-2 rounded max-w-xs ${
+                        isSentByLoggedInUser ? "bg-blue-200 text-left" : "bg-green-200 text-right"
+                      }`}
+                      style={{
+                        alignSelf: isSentByLoggedInUser ? "flex-start" : "flex-end",
+                        marginLeft: isSentByLoggedInUser ? 0 : "auto",
+                        marginRight: isSentByLoggedInUser ? "auto" : 0,
+                      }}
+                    >
+                      {msg.type === "voice" ? (
+                        <audio controls src={msg.content} />
+                      ) : (
+                        msg.content
+                      )}
+                      <div className="text-xs text-gray-600 mt-1">
+                        {new Date(msg.sent_at).toLocaleTimeString()}
+                        {isSentByLoggedInUser ? <span>You</span> : <span>{msg.receiver_id}</span>}
+                      </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
               <div ref={messagesEndRef} />
+            </div>
+
+            {/* Voice recording buttons */}
+            <div className="flex gap-2 mb-2">
+              {isRecording ? (
+                <button
+                  onClick={stopRecording}
+                  className="bg-red-600 text-white px-4 py-2 rounded"
+                  disabled={sending}
+                >
+                  Stop Recording
+                </button>
+              ) : (
+                <button
+                  onClick={startRecording}
+                  className="bg-green-600 text-white px-4 py-2 rounded"
+                  disabled={sending}
+                >
+                  Record Voice
+                </button>
+              )}
             </div>
 
             {/* Message input */}
