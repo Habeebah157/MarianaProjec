@@ -3,6 +3,7 @@ const router = express.Router();
 const pool = require('../db'); // Your PostgreSQL pool/connection
 const {verifyToken} = require("../middleware/authorization.js");
 const upload = require("../middleware/cloudinaryUpload");
+const multer = require('multer');
 
 
 router.get('/:userId/conversations', verifyToken, async (req, res) => {
@@ -80,40 +81,34 @@ router.get('/:userId/:receiverId', verifyToken, async (req, res) => {
   }
 });
 
-router.post("/:userId/send-voice", verifyToken, upload.single("voiceNote"), async (req, res) => {
-  try {
-    console.log("this",userId)
-    const { userId } = req.params;
-    const { receiverId } = req.body;
-    console.log(userId, receiverId)
-
-    if (req.user.id !== userId) {
-      return res.status(403).json({ error: "Forbidden" });
-    }
-    console.log("== Voice Note Upload ==");
-    console.log("userId (param):", userId);
-    console.log("receiverId (body):", receiverId);
-    console.log("req.user.id (from token):", req.user.id);
-    console.log("req.file:", req.file);
-    console.log("Uploaded file info:", req.file);
-
-    if (!req.file || !req.file.path) {
-      return res.status(400).json({ error: "No file uploaded or no file path" });
+router.post("/:userId/send-voice", (req, res) => {
+  upload.single("voiceNote")(req, res, async (err) => {
+    if (err instanceof multer.MulterError) {
+      return res.status(400).json({ error: err.message });
+    } else if (err) {
+      return res.status(500).json({ error: err.message || "Unknown error" });
     }
 
-    const audioUrl = req.file.path; // This should be the Cloudinary URL
+    if (!req.file) {
+      console.warn("⚠️ No file uploaded");
+      return res.status(400).json({ error: "No file uploaded" });
+    }
 
-    const result = await pool.query(
-      `INSERT INTO messages (sender_id, receiver_id, content, type)
-       VALUES ($1, $2, $3, 'voice') RETURNING *`,
-      [userId, receiverId, audioUrl]
-    );
+    console.log("✅ File uploaded:", req.file.path);
 
-    res.json(result.rows[0]);
-  } catch (err) {
-    console.error("Error in send-voice route:", err);
-    res.status(500).send("Server error");
-  }
+    try {
+      return res.json({
+        id: Date.now(),
+        type: "voice",
+        sender_id: req.params.userId,
+        receiver_id: req.body.receiverId,
+        content: req.file.path,
+        sent_at: new Date(),
+      });
+    } catch (e) {
+      return res.status(500).json({ error: "Failed to save voice message" });
+    }
+  });
 });
 
 

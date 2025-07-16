@@ -8,6 +8,7 @@ const app = express();
 const cors = require("cors");
 const { google } = require("googleapis");
 const http = require("http");
+const { testCloudinaryConnection } = require('./utils/cloudinary');
 
 // Postgres pool import
 const pool = require("./db");
@@ -56,12 +57,9 @@ app.use("/businesses", require("./routes/businesses.js"));
 app.use("/business-users", require("./routes/business_users.js"));
 app.use("/messages", require("./routes/messages.js"))
 
-// Debug logs
-console.log("🔍 PGUSER from jwtAuth:", process.env.PGUSER);
-console.log("🔍 DATABASE_URL from jwtAuth:", process.env.DATABASE_URL);
-console.log('GOOGLE_CLIENT_ID:', process.env.GOOGLE_CLIENT_ID);
-console.log('GOOGLE_CLIENT_SECRET:', process.env.GOOGLE_CLIENT_SECRET);
-console.log('GOOGLE_REDIRECT_URI:', process.env.GOOGLE_REDIRECT_URI);
+
+
+testCloudinaryConnection();
 
 // Root route
 app.get("/", (req, res) => {

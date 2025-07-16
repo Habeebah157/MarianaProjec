@@ -6,4 +6,14 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-module.exports = { cloudinary };
+const testCloudinaryConnection = async () => {
+  try {
+    // Ping Cloudinary API to check if credentials are valid
+    const response = await cloudinary.api.ping();
+    console.log("✅ Cloudinary connection successful:", response);
+  } catch (err) {
+    console.error("❌ Cloudinary connection failed:", err.message);
+  }
+};
+
+module.exports = { cloudinary, testCloudinaryConnection };
