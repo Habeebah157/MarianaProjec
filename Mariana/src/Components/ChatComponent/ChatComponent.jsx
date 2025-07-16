@@ -15,7 +15,6 @@ const ChatComponent = ({ userId }) => {
 
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState(null);
-  const [audioChunks, setAudioChunks] = useState([]);
 
   // Fetch users on load or userId change
   useEffect(() => {
@@ -143,12 +142,19 @@ const ChatComponent = ({ userId }) => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const recorder = new MediaRecorder(stream);
+      let chunks = [];
+
       recorder.ondataavailable = (e) => {
-        setAudioChunks((prev) => [...prev, e.data]);
+        chunks.push(e.data);
       };
+
+      recorder.onstop = async () => {
+        const audioBlob = new Blob(chunks, { type: "audio/webm" });
+        await uploadVoiceNote(audioBlob);
+      };
+
       recorder.start();
       setMediaRecorder(recorder);
-      setAudioChunks([]);
       setIsRecording(true);
     } catch (err) {
       alert("Microphone access denied or not available.");
@@ -156,19 +162,21 @@ const ChatComponent = ({ userId }) => {
     }
   };
 
-  // Stop recording and upload voice note
+  // Stop recording voice note
   const stopRecording = () => {
     if (!mediaRecorder) return;
     mediaRecorder.stop();
     setIsRecording(false);
-    mediaRecorder.onstop = async () => {
-      const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
-      await uploadVoiceNote(audioBlob);
-    };
   };
 
   // Upload voice note audio blob to backend
   const uploadVoiceNote = async (blob) => {
+    console.log("Uploading voice note, size:", blob.size);
+    if (blob.size === 0) {
+      alert("Recorded audio is empty!");
+      return;
+    }
+
     if (!selectedUserId) {
       alert("Select a user to send voice note.");
       return;
