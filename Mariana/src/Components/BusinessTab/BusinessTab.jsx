@@ -8,12 +8,13 @@ export function BusinessTab() {
   const [activeTab, setActiveTab] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [showModal, setShowModal] = useState(false);
-  const [showChat, setShowChat] = useState(false);
-  const [selectedBusiness, setSelectedBusiness] = useState(null);
+  // const [showChat, setShowChat] = useState(false);
+  // const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [businessesByCategory, setBusinessesByCategory] = useState({});
+  // const [businessId, setBusinessId] = useState
   const navigate = useNavigate()
 
-  const loggedInUserId = "550e8400-e29b-41d4-a716-446655440000";
+  // const loggedInUserId = "550e8400-e29b-41d4-a716-446655440000";
 
   useEffect(() => {
     async function fetchData() {
@@ -217,7 +218,7 @@ export function BusinessTab() {
       </div>
 
       {/* Floating Chat Window */}
-      {showChat && selectedBusiness && (
+      {/* {showChat && selectedBusiness && (
         <div className="fixed bottom-20 right-5 z-50 w-80 h-96 bg-white rounded-lg shadow-xl border border-gray-300 flex flex-col">
           <div className="flex justify-between items-center p-3 border-b">
             <h2 className="font-semibold text-lg">{selectedBusiness.name}</h2>
@@ -236,7 +237,7 @@ export function BusinessTab() {
             />
           </div>
         </div>
-      )}
+      )} */}
     </>
   );
 }

@@ -6,11 +6,12 @@ const Messages = () => {
   const [loggedInUserId, setLoggedInUserId] = useState(null);
   const location = useLocation();
   const business = location.state;
+  console.log("business", location.state)
 
   useEffect(() => {
     const fetchUser = async () => {
       const token = localStorage.getItem("token");
-      console.log(token);
+      console.log("token",token);
       if (!token) return;
 
       try {

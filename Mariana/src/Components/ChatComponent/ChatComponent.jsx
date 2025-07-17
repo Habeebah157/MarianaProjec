@@ -10,32 +10,31 @@ const ChatComponent = ({ userId, business, hasBusiness }) => {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
-  const [localBusiness, setLocalBusiness] = useState(null);
-  
-  useEffect(() => {
-    if (hasBusiness && business) {
-      setLocalBusiness(business);
-      setSelectedUserId(prev => [...prev, business]);
-    }
-  }, [hasBusiness, business]);
 
   const socketRef = useRef(null);
   const messagesEndRef = useRef(null);
 
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState(null);
+  console.log("HAS BUSINESS", hasBusiness)
 
+  // ✅ Inject business into user list
+  useEffect(() => {
+    if (hasBusiness && business && !users.find(u => u.id === business.id)) {
+      setUsers(prev => [...prev, business]);
+      setSelectedUserId(business.id);
+    }
+  }, [hasBusiness, business, users]);
+
+  // ✅ Fetch users
   useEffect(() => {
     if (!userId) return;
 
     const fetchUsers = async () => {
       try {
-        const res = await fetch(
-          `http://localhost:9000/messages/${userId}/conversations`,
-          {
-            headers: { token: localStorage.token },
-          }
-        );
+        const res = await fetch(`http://localhost:9000/messages/${userId}/conversations`, {
+          headers: { token: localStorage.token },
+        });
         if (!res.ok) throw new Error("Failed to fetch users");
         const data = await res.json();
         setUsers(data);
@@ -48,6 +47,7 @@ const ChatComponent = ({ userId, business, hasBusiness }) => {
     fetchUsers();
   }, [userId]);
 
+  // ✅ Fetch messages when selectedUserId changes
   useEffect(() => {
     if (!selectedUserId) {
       setMessages([]);
@@ -86,11 +86,11 @@ const ChatComponent = ({ userId, business, hasBusiness }) => {
     return () => controller.abort();
   }, [selectedUserId, userId]);
 
+  // ✅ Socket setup
   useEffect(() => {
     if (!userId) return;
 
     socketRef.current = io("http://localhost:9000");
-
     socketRef.current.emit("register", userId);
 
     socketRef.current.on("receive_message", (message) => {
@@ -211,6 +211,7 @@ const ChatComponent = ({ userId, business, hasBusiness }) => {
   };
 
   const selectedUser = users.find((u) => u.id === selectedUserId);
+  console.log("users",users)
 
   return (
     <div className="flex h-[32rem] max-w-4xl mx-auto border rounded shadow bg-white">
@@ -227,7 +228,8 @@ const ChatComponent = ({ userId, business, hasBusiness }) => {
                 selectedUserId === user.id ? "bg-blue-100 font-semibold" : ""
               }`}
             >
-              {user.user_name}
+              {user.user_name || user.business?.name}
+
             </li>
           ))}
         </ul>
@@ -243,10 +245,7 @@ const ChatComponent = ({ userId, business, hasBusiness }) => {
               Chat with {selectedUser.user_name}
             </h3>
 
-            <div
-              className="flex-grow overflow-auto border rounded p-3 mb-4"
-              style={{ maxHeight: "18rem" }}
-            >
+            <div className="flex-grow overflow-auto border rounded p-3 mb-4" style={{ maxHeight: "18rem" }}>
               {error && <div className="text-red-600 mb-2">{error}</div>}
               {loadingMessages ? (
                 <p>Loading messages...</p>
@@ -274,7 +273,7 @@ const ChatComponent = ({ userId, business, hasBusiness }) => {
                       )}
                       <div className="text-xs text-gray-600 mt-1">
                         {new Date(msg.sent_at).toLocaleTimeString()}
-                        {isSentByLoggedInUser ? <span>You</span> : <span>{msg.receiver_id}</span>}
+                        {isSentByLoggedInUser ? <span> You</span> : <span> {msg.receiver_id}</span>}
                       </div>
                     </div>
                   );
@@ -306,7 +305,6 @@ const ChatComponent = ({ userId, business, hasBusiness }) => {
                 {sending ? "Sending..." : "Send"}
               </button>
 
-              {/* Mic or Stop icon next to send button */}
               {isRecording ? (
                 <FaStop
                   onClick={stopRecording}
@@ -325,7 +323,6 @@ const ChatComponent = ({ userId, business, hasBusiness }) => {
                 />
               )}
 
-              {/* Blinking red dot when recording */}
               {isRecording && (
                 <FaCircle
                   className="animate-pulse text-red-600"
