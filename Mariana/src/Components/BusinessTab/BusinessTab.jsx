@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import Modal from "../Modal/Modal";
 import ChatComponent from "../ChatComponent/ChatComponent";
 import { getBusinesses } from "../../api/businessesApi";
+import {useNavigate} from "react-router-dom"
 
 export function BusinessTab() {
   const [activeTab, setActiveTab] = useState("");
@@ -10,6 +11,7 @@ export function BusinessTab() {
   const [showChat, setShowChat] = useState(false);
   const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [businessesByCategory, setBusinessesByCategory] = useState({});
+  const navigate = useNavigate()
 
   const loggedInUserId = "550e8400-e29b-41d4-a716-446655440000";
 
@@ -40,6 +42,7 @@ export function BusinessTab() {
   const handleCloseModal = () => setShowModal(false);
 
   const handleOpenChat = (business) => {
+    navigate('/messages', { state: { business: business } });
     setSelectedBusiness(business);
     setShowChat(true);
   };

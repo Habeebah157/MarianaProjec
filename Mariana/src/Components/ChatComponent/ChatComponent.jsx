@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
+import { FaCircle, FaMicrophone, FaStop } from "react-icons/fa";
 
-const ChatComponent = ({ userId }) => {
+const ChatComponent = ({ userId, business, hasBusiness }) => {
   const [users, setUsers] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -9,6 +10,14 @@ const ChatComponent = ({ userId }) => {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
+  const [localBusiness, setLocalBusiness] = useState(null);
+  
+  useEffect(() => {
+    if (hasBusiness && business) {
+      setLocalBusiness(business);
+      setSelectedUserId(prev => [...prev, business]);
+    }
+  }, [hasBusiness, business]);
 
   const socketRef = useRef(null);
   const messagesEndRef = useRef(null);
@@ -16,7 +25,6 @@ const ChatComponent = ({ userId }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState(null);
 
-  // Fetch users on load or userId change
   useEffect(() => {
     if (!userId) return;
 
@@ -40,7 +48,6 @@ const ChatComponent = ({ userId }) => {
     fetchUsers();
   }, [userId]);
 
-  // Fetch messages when selectedUserId changes
   useEffect(() => {
     if (!selectedUserId) {
       setMessages([]);
@@ -79,7 +86,6 @@ const ChatComponent = ({ userId }) => {
     return () => controller.abort();
   }, [selectedUserId, userId]);
 
-  // Setup Socket.IO connection
   useEffect(() => {
     if (!userId) return;
 
@@ -112,14 +118,12 @@ const ChatComponent = ({ userId }) => {
     };
   }, [userId, selectedUserId]);
 
-  // Scroll to bottom on messages change
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
 
-  // Send text message via socket
   const handleSendMessage = () => {
     if (!newMessage.trim() || !socketRef.current) return;
 
@@ -133,7 +137,6 @@ const ChatComponent = ({ userId }) => {
     });
   };
 
-  // Start recording voice note
   const startRecording = async () => {
     if (!navigator.mediaDevices) {
       alert("Your browser does not support audio recording.");
@@ -162,16 +165,13 @@ const ChatComponent = ({ userId }) => {
     }
   };
 
-  // Stop recording voice note
   const stopRecording = () => {
     if (!mediaRecorder) return;
     mediaRecorder.stop();
     setIsRecording(false);
   };
 
-  // Upload voice note audio blob to backend
   const uploadVoiceNote = async (blob) => {
-    console.log("Uploading voice note, size:", blob.size);
     if (blob.size === 0) {
       alert("Recorded audio is empty!");
       return;
@@ -201,7 +201,6 @@ const ChatComponent = ({ userId }) => {
       if (!res.ok) throw new Error("Failed to upload voice note");
       const message = await res.json();
 
-      // Optionally add message immediately (socket.io should also push)
       setMessages((prev) => [...prev, message]);
     } catch (err) {
       console.error(err);
@@ -215,7 +214,7 @@ const ChatComponent = ({ userId }) => {
 
   return (
     <div className="flex h-[32rem] max-w-4xl mx-auto border rounded shadow bg-white">
-      {/* Sidebar with user list */}
+      {/* Sidebar */}
       <div className="w-1/4 border-r overflow-auto">
         <h2 className="p-4 font-bold border-b">Users</h2>
         {users.length === 0 && <p className="p-4 text-gray-500">No users found</p>}
@@ -234,6 +233,7 @@ const ChatComponent = ({ userId }) => {
         </ul>
       </div>
 
+      {/* Chat area */}
       <div className="flex-grow p-6 flex flex-col">
         {!selectedUser ? (
           <p className="text-gray-400">Select a user to start chatting</p>
@@ -283,29 +283,7 @@ const ChatComponent = ({ userId }) => {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Voice recording buttons */}
-            <div className="flex gap-2 mb-2">
-              {isRecording ? (
-                <button
-                  onClick={stopRecording}
-                  className="bg-red-600 text-white px-4 py-2 rounded"
-                  disabled={sending}
-                >
-                  Stop Recording
-                </button>
-              ) : (
-                <button
-                  onClick={startRecording}
-                  className="bg-green-600 text-white px-4 py-2 rounded"
-                  disabled={sending}
-                >
-                  Record Voice
-                </button>
-              )}
-            </div>
-
-            {/* Message input */}
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
               <input
                 type="text"
                 className="flex-grow border rounded px-3 py-2"
@@ -327,6 +305,34 @@ const ChatComponent = ({ userId }) => {
               >
                 {sending ? "Sending..." : "Send"}
               </button>
+
+              {/* Mic or Stop icon next to send button */}
+              {isRecording ? (
+                <FaStop
+                  onClick={stopRecording}
+                  className="text-red-600 cursor-pointer"
+                  size={28}
+                  title="Stop Recording"
+                  aria-label="Stop Recording"
+                />
+              ) : (
+                <FaMicrophone
+                  onClick={startRecording}
+                  className="text-green-600 cursor-pointer"
+                  size={28}
+                  title="Record Voice"
+                  aria-label="Record Voice"
+                />
+              )}
+
+              {/* Blinking red dot when recording */}
+              {isRecording && (
+                <FaCircle
+                  className="animate-pulse text-red-600"
+                  title="Recording..."
+                  style={{ fontSize: "1rem" }}
+                />
+              )}
             </div>
           </>
         )}

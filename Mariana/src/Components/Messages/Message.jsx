@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import ChatComponent from "../ChatComponent/ChatComponent";
 
 const Messages = () => {
   const [loggedInUserId, setLoggedInUserId] = useState(null);
-  // const receiverId = "d4e5f678-90ab-4cde-1234-567890abcdef"; // Or dynamic
+  const location = useLocation();
+  const business = location.state;
 
   useEffect(() => {
     const fetchUser = async () => {
       const token = localStorage.getItem("token");
-      console.log(token)
+      console.log(token);
       if (!token) return;
 
       try {
@@ -18,11 +20,10 @@ const Messages = () => {
         if (!res.ok) throw new Error("Failed to fetch user info");
 
         const data = await res.json();
-        console.log(data)
+        console.log(data);
         setLoggedInUserId(data.id);
       } catch (error) {
         console.error(error);
-        // Handle errors or redirect to login if needed
       }
     };
 
@@ -35,7 +36,11 @@ const Messages = () => {
     <div className="max-w-4xl mx-auto mt-10 p-4">
       <h1 className="text-2xl font-bold mb-6 text-center">Your Messages</h1>
       <div className="border rounded shadow p-4">
-        <ChatComponent userId={loggedInUserId}/>
+        {business ? (
+          <ChatComponent userId={loggedInUserId} business={business} hasBusiness={true} />
+        ) : (
+          <ChatComponent userId={loggedInUserId} hasBusiness={true}/>
+        )}
       </div>
     </div>
   );
