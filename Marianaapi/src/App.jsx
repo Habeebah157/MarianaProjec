@@ -19,6 +19,7 @@ import UserProfile from "./Components/UserProfile/UserProfile";
 import NewEvent from "./Components/NewEvent/NewEvent";
 import EventDetail from "./Components/EventDetail/EventDetail";
 import PrayerTime from "./Components/PrayerTime/PrayerTime";
+
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(true);
 
@@ -55,107 +56,122 @@ function App() {
 
   return (
     <BrowserRouter>
-      <Navbar isAuthenticated={isAuthenticated} setAuth={setAuth} />
-      <Routes>
-        <Route
-          path="/"
-          element={
-            <div>
-              <h1 className="text-3xl font-bold underline text-center mt-10">
-                Welcome to the Muslim Bulletin
-                {isAuthenticated}
-              </h1>
-              <p className="text-center mt-5">
-                Your one-stop solution for all your community needs.
-              </p>
-              <PrayerTime />
-              {/* <Question /> */}
-              <Community />
-              <Businesses />
-            </div>
-          }
-        />
+      <div className="flex flex-col min-h-screen">
+        <Navbar isAuthenticated={isAuthenticated} setAuth={setAuth} />
 
-        <Route
-          path="/question"
-          element={
-            isAuthenticated ? (
-              <Questiontab setAuth={setAuth} />
-            ) : (
-              <Navigate to="/" replace />
-            )
-          }
-        />
-        <Route
-          path="/events"
-          element={
-            isAuthenticated ? (
-              <Events setAuth={setAuth} />
-            ) : (
-              <Navigate to="/" replace />
-            )
-          }
-        />
-        <Route
-          path="/businesses"
-          element={
-            isAuthenticated ? (
-              <BusinessTab setAuth={setAuth} />
-            ) : (
-              <Navigate to="/" replace />
-            )
-          }
-        />
-        <Route
-          path="/question/:number"
-          element={
-            isAuthenticated ? (
-              <QuestionPanel setAuth={setAuth} />
-            ) : (
-              <Navigate to="/" replace />
-            )
-          }
-        />
-        <Route path="/questions/:number/edit" element={<EditQuestion />} />
-        <Route
-          path="createPost"
-          element={
-            isAuthenticated ? (
-              <CreatePost setAuth={setAuth} />
-            ) : (
-              <Navigate to="/" replace />
-            )
-          }
-        />
-        <Route
-          path="profile/:userId"
-          element={
-            isAuthenticated ? <UserProfile /> : <Navigate to="/" replace />
-          }
-        />
-        <Route
-          path="/EventDetail/:eventId"
-          element={
-            isAuthenticated ? <EventDetail /> : <Navigate to="/" replace />
-          }
-        />
-        <Route
-          path="/createEvent"
-          element={
-            isAuthenticated ? (
-              <NewEvent setAuth={setAuth} />
-            ) : (
-              <Navigate to="/" replace />
-            )
-          }
-        />
+        {/* Main content area grows and has left margin to accommodate sidebar */}
+        <main className="flex-grow p-4 md:ml-64">
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <div>
+                  <h1 className="text-3xl font-bold underline text-center mt-10">
+                    Welcome to the Muslim Bulletin
+                    {isAuthenticated.toString()}
+                  </h1>
+                  <p className="text-center mt-5">
+                    Your one-stop solution for all your community needs.
+                  </p>
+                  <PrayerTime />
+                  {/* <Question /> */}
+                  {/* <Community /> */}
+                  <Businesses />
+                </div>
+              }
+            />
 
-        {/* <Route path="/events" element={props => <Events {...props} />} /> */}
-        {/* <Route path="/businesses" render={props => <BusinessTab {...props}/>} /> */}
-        <Route path="/SignUp" element={<Signup setAuth={setAuth} />} />
-        <Route path="/login" element={<Login setAuth={setAuth} />} />
-      </Routes>
-      <Footer /> {/* Appears on every page */}
+            <Route
+              path="/question"
+              element={
+                isAuthenticated ? (
+                  <Questiontab setAuth={setAuth} />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
+            <Route
+              path="/events"
+              element={
+                isAuthenticated ? (
+                  <Events setAuth={setAuth} />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
+            <Route
+              path="/businesses"
+              element={
+                isAuthenticated ? (
+                  <BusinessTab setAuth={setAuth} />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
+            <Route
+              path="/question/:number"
+              element={
+                isAuthenticated ? (
+                  <QuestionPanel setAuth={setAuth} />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
+            <Route path="/questions/:number/edit" element={<EditQuestion />} />
+            <Route
+              path="createPost"
+              element={
+                isAuthenticated ? (
+                  <CreatePost setAuth={setAuth} />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
+            <Route
+              path="profile/:userId"
+              element={
+                isAuthenticated ? <UserProfile /> : <Navigate to="/" replace />
+              }
+            />
+            <Route
+              path="/EventDetail/:eventId"
+              element={
+                isAuthenticated ? <EventDetail /> : <Navigate to="/" replace />
+              }
+            />
+            <Route
+              path="/createEvent"
+              element={
+                isAuthenticated ? (
+                  <NewEvent setAuth={setAuth} />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
+            {/* <Route
+              path="/community"
+              element={
+                isAuthenticated ? (
+                  <h1>Hello love</h1>
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            /> */}
+
+            <Route path="/SignUp" element={<Signup setAuth={setAuth} />} />
+            <Route path="/login" element={<Login setAuth={setAuth} />} />
+          </Routes>
+        </main>
+
+        <Footer /> {/* Footer sticks at bottom */}
+      </div>
     </BrowserRouter>
   );
 }

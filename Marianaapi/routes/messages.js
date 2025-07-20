@@ -14,41 +14,64 @@ router.get('/:userId/conversations', verifyToken, async (req, res) => {
       return res.status(403).json({ error: "Forbidden" });
     }
 
-    // Step 1: Get distinct other user IDs from messages
+    // Step 1: Get distinct other participant IDs from messages
     const query = `
       SELECT DISTINCT
         CASE
           WHEN sender_id = $1 THEN receiver_id
           ELSE sender_id
-        END AS other_user_id
+        END AS other_participant_id
       FROM messages
       WHERE (sender_id = $1 OR receiver_id = $1)
         AND sender_id != receiver_id
     `;
-    const { rows: otherUsers } = await pool.query(query, [userId]);
+    const { rows: otherParticipants } = await pool.query(query, [userId]);
 
-    // Step 2: For each user ID, fetch user_name from users table
+    // Step 2: Fetch names from users or businesses based on type
     const results = [];
-    for (const user of otherUsers) {
-      const userId = user.other_user_id;
-      const userResult = await pool.query(
-        `SELECT user_name FROM users WHERE id = $1`,
-        [userId]
+    for (const { other_participant_id } of otherParticipants) {
+      // First, get the type (user or business)
+      const typeRes = await pool.query(
+        `SELECT type FROM participants WHERE id = $1`,
+        [other_participant_id]
       );
 
-      if (userResult.rows.length > 0) {
+      if (typeRes.rows.length === 0) continue;
+
+      const type = typeRes.rows[0].type;
+      let name = "";
+
+      if (type === "user") {
+        const userRes = await pool.query(
+          `SELECT user_name FROM users WHERE id = $1`,
+          [other_participant_id]
+        );
+        if (userRes.rows.length > 0) {
+          name = userRes.rows[0].user_name;
+        }
+      } else if (type === "business") {
+        const bizRes = await pool.query(
+          `SELECT name FROM businesses WHERE id = $1`,
+          [other_participant_id]
+        );
+        if (bizRes.rows.length > 0) {
+          name = bizRes.rows[0].name;
+        }
+      }
+
+      if (name) {
         results.push({
-          id: userId,
-          user_name: userResult.rows[0].user_name,
+          id: other_participant_id,
+          name,
+          type
         });
       }
     }
 
-    // Step 3: Return combined list of user ids and usernames
     res.json(results);
 
   } catch (err) {
-    console.error("error",err.message);
+    console.error("Server error:", err.message || err);
     res.status(500).send("Server error");
   }
 });
@@ -57,11 +80,20 @@ router.get('/:userId/conversations', verifyToken, async (req, res) => {
 
 router.get('/:userId/:receiverId', verifyToken, async (req, res) => {
   try {
-    
     const { userId, receiverId } = req.params;
-    console.log("userId",userId, req.user.id)
+
     if (req.user.id !== userId) {
       return res.status(403).json({ error: "Forbidden" });
+    }
+
+    // Optional: Check if both participants exist
+    const participantCheck = await pool.query(
+      `SELECT id FROM participants WHERE id = ANY($1::uuid[])`,
+      [[userId, receiverId]]
+    );
+
+    if (participantCheck.rowCount < 2) {
+      return res.status(404).json({ error: "One or both participants not found" });
     }
 
     const query = `
@@ -76,12 +108,12 @@ router.get('/:userId/:receiverId', verifyToken, async (req, res) => {
     const { rows } = await pool.query(query, [userId, receiverId]);
     res.json(rows);
   } catch (err) {
-    console.error("errpr",err.message);
+    console.error("error", err.message);
     res.status(500).send("Server error");
   }
 });
 
-router.post("/:userId/send-voice", (req, res) => {
+router.post("/:userId/send-voice", verifyToken, (req, res) => {
   upload.single("voiceNote")(req, res, async (err) => {
     if (err instanceof multer.MulterError) {
       return res.status(400).json({ error: err.message });
@@ -90,23 +122,37 @@ router.post("/:userId/send-voice", (req, res) => {
     }
 
     if (!req.file) {
-      console.warn("⚠️ No file uploaded");
       return res.status(400).json({ error: "No file uploaded" });
     }
 
-    console.log("✅ File uploaded:", req.file.path);
+    if (req.user.id !== req.params.userId) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
+    const { receiverId } = req.body;
 
     try {
-      return res.json({
-        id: Date.now(),
-        type: "voice",
-        sender_id: req.params.userId,
-        receiver_id: req.body.receiverId,
-        content: req.file.path,
-        sent_at: new Date(),
-      });
+      // Optional: Validate receiverId exists in participants
+      const receiverCheck = await pool.query(
+        `SELECT id FROM participants WHERE id = $1`,
+        [receiverId]
+      );
+
+      if (receiverCheck.rowCount === 0) {
+        return res.status(404).json({ error: "Receiver not found" });
+      }
+
+      // Insert message into DB
+      const result = await pool.query(
+        `INSERT INTO messages (sender_id, receiver_id, content, sent_at) 
+         VALUES ($1, $2, $3, NOW()) RETURNING *`,
+        [req.params.userId, receiverId, req.file.path]
+      );
+
+      res.json(result.rows[0]);
     } catch (e) {
-      return res.status(500).json({ error: "Failed to save voice message" });
+      console.error("Failed to save voice message:", e);
+      res.status(500).json({ error: "Failed to save voice message" });
     }
   });
 });
