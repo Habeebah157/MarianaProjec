@@ -2,6 +2,9 @@ import React, { useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
 import { FaCircle, FaMicrophone, FaStop } from "react-icons/fa";
 
+const getUserId = (user) => user?.id;
+const getUserName = (user) => user?.name || "Unknown";
+
 const ChatComponent = ({ userId, business, hasBusiness }) => {
   const [users, setUsers] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState(null);
@@ -16,17 +19,14 @@ const ChatComponent = ({ userId, business, hasBusiness }) => {
 
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState(null);
-  console.log("HAS BUSINESS", hasBusiness)
 
-  // ✅ Inject business into user list
   useEffect(() => {
-    if (hasBusiness && business && !users.find(u => u.id === business.id)) {
-      setUsers(prev => [...prev, business]);
+    if (hasBusiness && business && !users.find((u) => getUserId(u) === business.id)) {
+      setUsers((prev) => [...prev, business]); // Add business directly
       setSelectedUserId(business.id);
     }
   }, [hasBusiness, business, users]);
 
-  // ✅ Fetch users
   useEffect(() => {
     if (!userId) return;
 
@@ -47,7 +47,6 @@ const ChatComponent = ({ userId, business, hasBusiness }) => {
     fetchUsers();
   }, [userId]);
 
-  // ✅ Fetch messages when selectedUserId changes
   useEffect(() => {
     if (!selectedUserId) {
       setMessages([]);
@@ -86,7 +85,6 @@ const ChatComponent = ({ userId, business, hasBusiness }) => {
     return () => controller.abort();
   }, [selectedUserId, userId]);
 
-  // ✅ Socket setup
   useEffect(() => {
     if (!userId) return;
 
@@ -210,8 +208,7 @@ const ChatComponent = ({ userId, business, hasBusiness }) => {
     }
   };
 
-  const selectedUser = users.find((u) => u.id === selectedUserId);
-  console.log("users",users)
+  const selectedUser = users.find((u) => getUserId(u) === selectedUserId);
 
   return (
     <div className="flex h-[32rem] max-w-4xl mx-auto border rounded shadow bg-white">
@@ -222,14 +219,13 @@ const ChatComponent = ({ userId, business, hasBusiness }) => {
         <ul>
           {users.map((user) => (
             <li
-              key={user.id}
-              onClick={() => setSelectedUserId(user.id)}
+              key={getUserId(user)}
+              onClick={() => setSelectedUserId(getUserId(user))}
               className={`cursor-pointer p-3 border-b hover:bg-gray-100 ${
-                selectedUserId === user.id ? "bg-blue-100 font-semibold" : ""
+                selectedUserId === getUserId(user) ? "bg-blue-100 font-semibold" : ""
               }`}
             >
-              {user.user_name || user.business?.name}
-
+              {getUserName(user)}
             </li>
           ))}
         </ul>
@@ -242,10 +238,13 @@ const ChatComponent = ({ userId, business, hasBusiness }) => {
         ) : (
           <>
             <h3 className="text-xl font-bold mb-4">
-              Chat with {selectedUser.user_name}
+              Chat with {getUserName(selectedUser)}
             </h3>
 
-            <div className="flex-grow overflow-auto border rounded p-3 mb-4" style={{ maxHeight: "18rem" }}>
+            <div
+              className="flex-grow overflow-auto border rounded p-3 mb-4"
+              style={{ maxHeight: "18rem" }}
+            >
               {error && <div className="text-red-600 mb-2">{error}</div>}
               {loadingMessages ? (
                 <p>Loading messages...</p>

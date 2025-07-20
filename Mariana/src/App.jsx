@@ -66,7 +66,7 @@ function App() {
                 </p>
                 <PrayerTime />
                 <NotificationBells />
-                <Community />
+                {/* <Community /> */}
                 <Businesses />
               </div>
             }
@@ -153,11 +153,21 @@ function App() {
               )
             }
           />
-          <Route
+         <Route
             path="/messages"
             element={
               isAuthenticated ? (
                 <Messages />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
+          /> 
+          <Route
+            path="community"
+            element={
+              isAuthenticated ? (
+                <Community />
               ) : (
                 <Navigate to="/" replace />
               )
