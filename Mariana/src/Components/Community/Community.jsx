@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from 'react-router-dom';
 
 const communitiesData = {
   recomendadas: [
@@ -7,12 +8,6 @@ const communitiesData = {
       name: "Gwinnett",
       members: "47k",
       description: "Subreddit of Gwinnett County, GA.",
-    },
-    {
-      id: "r/nextfuckinglevel",
-      name: "NextFuckingLevel",
-      members: "9.7M",
-      description: "Amazing skills and moments.",
     },
   ],
   sideProject: [
@@ -32,10 +27,17 @@ const communitiesData = {
 };
 
 export default function CommunitiesList() {
+  const navigate = useNavigate();
+
   const allCommunities = [
     ...(communitiesData.recomendadas || []),
     ...(communitiesData.sideProject || []),
   ];
+
+  // FIX: pass the community object when calling handleClick
+  const handleClick = (communityName) => {
+    navigate(`/community/${communityName}`);
+  };
 
   return (
     <div className="max-w-2xl mx-auto p-4">
@@ -48,8 +50,15 @@ export default function CommunitiesList() {
             className="border border-gray-200 rounded-md p-3 hover:shadow-sm transition"
           >
             <div className="flex items-center justify-between mb-1">
-              <h2 className="text-sm font-semibold">{community.name}</h2>
-              <span className="text-xs text-gray-500">{community.members} members</span>
+              <h2
+                className="text-sm font-semibold hover:underline cursor-pointer"
+                onClick={() => handleClick(community.name)}
+              >
+                {community.name}
+              </h2>
+              <span className="text-xs text-gray-500">
+                {community.members} members
+              </span>
             </div>
             <p className="text-xs text-gray-600 mb-2">{community.description}</p>
             <button className="text-xs px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition">

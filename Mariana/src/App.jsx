@@ -20,7 +20,7 @@ import EventDetail from "./Components/EventDetail/EventDetail";
 import PrayerTime from "./Components/PrayerTime/PrayerTime";
 import NotificationBells from "./Components/NotificationBells/NotificationBells";
 import Messages from "./Components/Messages/Message";
-
+import CommunityPage from "./Components/CommunityPage/CommunityPage";
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(true);
 
@@ -173,6 +173,14 @@ function App() {
               )
             }
           />
+          <Route 
+          path="/community/:name" 
+          element={
+          isAuthenticated ? (
+          <CommunityPage />)
+          :
+          (<Navigate to="/" replace />)} />
+
           <Route path="/SignUp" element={<Signup setAuth={setAuth} />} />
           <Route path="/login" element={<Login setAuth={setAuth} />} />
         </Routes>
