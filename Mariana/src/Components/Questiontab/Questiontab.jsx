@@ -35,8 +35,8 @@ function timeAgo(dateString) {
   }
 }
 
-export default function Questiontag() {
-  const [questions, setIsQuestions] = useState([]);
+export default function Questiontab() {
+  const [questions, setQuestions] = useState([]);
   const [reactions, setReactions] = useState({});
 
   const uploadQuestions = useCallback(async () => {
@@ -48,12 +48,12 @@ export default function Questiontag() {
       const uploadedQuestions = await res.json();
       console.log("Questions fetched:", uploadedQuestions);
       if (uploadedQuestions && uploadedQuestions.questions) {
-        setIsQuestions(uploadedQuestions.questions);
+        setQuestions(uploadedQuestions.questions);
 
         const initialReactions = {};
         uploadedQuestions.questions.forEach((q) => {
           initialReactions[q.id] = {
-            userReaction: null,
+            userReaction: q.user_reaction || null,
             likeCount: q.like_count || 0,
             dislikeCount: q.dislike_count || 0,
           };
@@ -63,7 +63,7 @@ export default function Questiontag() {
     } catch (err) {
       console.error(err.message);
     }
-  }, [setIsQuestions, setReactions]);
+  }, []);
 
   useEffect(() => {
     uploadQuestions();
@@ -71,17 +71,16 @@ export default function Questiontag() {
 
   const sendReaction = async (question_id, vote) => {
     try {
-      const res = await fetch("http://localhost:9000/question_votes", {
+      const res = await fetch("http://localhost:9000/question_votes/question_votes", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           token: localStorage.token,
-        },
-        body: JSON.stringify({ question_id, vote }),
+        }
+        // body: JSON.stringify({ question_id, vote }),
       });
       const data = await res.json();
       console.log("Vote response:", data);
-      console.log("VOTE SENT");
       if (res.ok) {
         setReactions((prev) => ({
           ...prev,

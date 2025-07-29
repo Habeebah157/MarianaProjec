@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Users, Calendar, Award, TrendingUp, MessageCircle, Heart, Share2, Bookmark, ChevronDown, Star, Bell, Settings, Search } from 'lucide-react';
-
+import PrayerTime from '../PrayerTime/PrayerTime';
 const CommunityPage = () => {
   const { name } = useParams();
-  const communityName = name || 'Gwinnett'; // fallback if no param
+  const communityName = name || 'Gwinnett'; 
 
-  // Enhanced mock community data
   const communityData = {
     Gwinnett: {
       description: 'Subreddit of Gwinnett County, GA.',
@@ -317,10 +316,14 @@ const CommunityPage = () => {
             </div>
           </div>
 
-          {/* Sidebar */}
           <div className="space-y-6">
-            {/* Community Rules */}
+            <div>
+                <PrayerTime />
+                
+            </div>
+
             <div className="bg-white border rounded-lg p-4">
+            
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Community Rules</h3>
               {community.rules.length > 0 ? (
                 <div className="space-y-3">
@@ -335,7 +338,9 @@ const CommunityPage = () => {
                 <p className="text-gray-500">No rules available.</p>
               )}
             </div>
+            
           </div>
+
         </div>
       </div>
     </div>

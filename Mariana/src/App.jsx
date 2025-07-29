@@ -17,10 +17,10 @@ import EditQuestion from "./Components/EditQuestion/EditQuestion";
 import UserProfile from "./Components/UserProfile/UserProfile";
 import NewEvent from "./Components/NewEvent/NewEvent";
 import EventDetail from "./Components/EventDetail/EventDetail";
-import PrayerTime from "./Components/PrayerTime/PrayerTime";
 import NotificationBells from "./Components/NotificationBells/NotificationBells";
 import Messages from "./Components/Messages/Message";
 import CommunityPage from "./Components/CommunityPage/CommunityPage";
+import HomePage from "./Components/HomePage/HomePage";
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(true);
 
@@ -58,16 +58,17 @@ function App() {
             path="/"
             element={
               <div>
-                <h1 className="text-3xl font-bold underline text-center mt-10">
+                {/* <h1 className="text-3xl font-bold underline text-center mt-10">
                   Welcome to the Muslim Bulletin {isAuthenticated.toString()}
                 </h1>
                 <p className="text-center mt-5">
                   Your one-stop solution for all your community needs.
-                </p>
-                <PrayerTime />
-                <NotificationBells />
+                </p> */}
+                <HomePage/>
+                
+                {/* <NotificationBells /> */}
                 {/* <Community /> */}
-                <Businesses />
+                {/* <Businesses /> */}
               </div>
             }
           />
