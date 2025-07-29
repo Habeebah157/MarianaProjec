@@ -9,7 +9,9 @@ const pool = require("../db.js");
 // GET all questions
 router.get("/", verifyToken, async (req, res) => {
   try {
-    const { rows } = await pool.query(`
+    const user_id = req.user.id; // authenticated user ID
+
+    const query = `
       SELECT 
         q.id, 
         q.user_id, 
@@ -17,13 +19,35 @@ router.get("/", verifyToken, async (req, res) => {
         q.title, 
         q.body, 
         q.created_at,
-        COUNT(a.id) AS answer_count  -- Count answers per question
+        COALESCE(like_counts.like_count, 0) AS like_count,
+        COALESCE(dislike_counts.dislike_count, 0) AS dislike_count,
+        COALESCE(answer_counts.answer_count, 0) AS answer_count,
+        ur.reaction_type AS user_reaction
       FROM questions q
       JOIN users u ON q.user_id = u.id
-      LEFT JOIN answers a ON q.id = a.question_id  -- Include questions with 0 answers
-      GROUP BY q.id, u.user_name  -- Group by question and username
+      LEFT JOIN (
+        SELECT question_id, COUNT(*) AS like_count
+        FROM question_reactions
+        WHERE reaction_type = 'like'
+        GROUP BY question_id
+      ) like_counts ON like_counts.question_id = q.id
+      LEFT JOIN (
+        SELECT question_id, COUNT(*) AS dislike_count
+        FROM question_reactions
+        WHERE reaction_type = 'dislike'
+        GROUP BY question_id
+      ) dislike_counts ON dislike_counts.question_id = q.id
+      LEFT JOIN (
+        SELECT question_id, COUNT(*) AS answer_count
+        FROM answers
+        GROUP BY question_id
+      ) answer_counts ON answer_counts.question_id = q.id
+      LEFT JOIN question_reactions ur ON ur.question_id = q.id AND ur.user_id = $1
+      GROUP BY q.id, u.user_name, like_counts.like_count, dislike_counts.dislike_count, answer_counts.answer_count, ur.reaction_type
       ORDER BY q.created_at DESC
-    `);
+    `;
+
+    const { rows } = await pool.query(query, [user_id]);
 
     if (rows.length === 0) {
       return res.status(200).json({
@@ -45,6 +69,7 @@ router.get("/", verifyToken, async (req, res) => {
     });
   }
 });
+
 router.get("/user/:userId/questions", verifyToken, async (req, res) => {
   try {
     const userId = req.params.userId;
