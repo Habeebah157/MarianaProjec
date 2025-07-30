@@ -1,15 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-// import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
-// import "leaflet/dist/leaflet.css";
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
 import RSVP from "../RSVP/RSVP";
-// import { fetchEventAnswers } from "../../api/eventApi";
 
-// Leaflet marker fix
 const eventMarkerIcon = new L.Icon({
   iconRetinaUrl: markerIcon2x,
   iconUrl: markerIcon,
@@ -59,9 +55,6 @@ export default function EventDetail() {
   const [replies, setReplies] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmittingReply, setIsSubmittingReply] = useState(false);
-  // const [fetchedanswers, setFetchedAnswers] = useState([]);
-  // const [loading, setLoading] = useState(true);
-  // const [error, setError] = useState(null);
 
   const passedEvents = location.state?.eventData || [];
   const event = passedEvents.find((e) => String(e.id) === eventId);
@@ -95,7 +88,6 @@ export default function EventDetail() {
           },
         });
         const json = await res.json();
-        console.log("JSON", json)
         if (json.success) {
           setAnswers(json.data);
         } else {
@@ -105,20 +97,6 @@ export default function EventDetail() {
         console.error("Error fetching answers:", err);
       }
     };
-
-    // async function loadAnswers() {
-    //     setLoading(true);
-    //     setError(null);
-    //     try {
-    //       const data = await fetchEventAnswers(eventId);
-    //       setFetchedAnswers(data);
-    //     } catch (err) {
-    //       setError('Failed to load answers');
-    //     } finally {
-    //       setLoading(false);
-    //     }
-    // }
-    // loadAnswers();
 
     if (eventId) {
       fetchComments();
@@ -178,7 +156,6 @@ export default function EventDetail() {
     setIsSubmittingReply(true);
 
     try {
-      // Optimistic update
       const tempId = Date.now().toString();
       setReplies(prev => ({
         ...prev,
@@ -207,7 +184,6 @@ export default function EventDetail() {
       }
 
       if (responseData.success) {
-        // Update with real ID from server
         setReplies(prev => ({
           ...prev,
           [questionId]: prev[questionId].map(reply => 

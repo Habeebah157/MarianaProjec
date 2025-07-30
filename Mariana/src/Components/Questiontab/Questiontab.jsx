@@ -76,8 +76,8 @@ export default function Questiontab() {
         headers: {
           "Content-Type": "application/json",
           token: localStorage.token,
-        }
-        // body: JSON.stringify({ question_id, vote }),
+        },
+        body: JSON.stringify({ question_id, vote }),
       });
       const data = await res.json();
       console.log("Vote response:", data);
@@ -210,7 +210,7 @@ export default function Questiontab() {
                     aria-label="Dislike"
                     title="Dislike"
                   >
-                    👎 <span>{reaction.dislikeCount}</span>
+                    👎 <span>{0}</span>
                   </button>
 
                   <button
