@@ -301,4 +301,9 @@ router.get('/:id/ics', async (req, res) => {
   }
 })
 
+router.get('/oauth2callback', async (req, res) => {
+  // handle Google auth code exchange here
+});
+
+
 module.exports = router;

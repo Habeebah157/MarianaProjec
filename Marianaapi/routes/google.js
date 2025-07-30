@@ -8,42 +8,34 @@ module.exports = (oauth2Client) => {
     const authUrl = oauth2Client.generateAuthUrl({
       access_type: 'offline',
       scope: [
-        'https://www.googleapis.com/auth/calendar.readonly',
+        'https://www.googleapis.com/auth/calendar.events', // <-- changed to allow adding events
         'https://www.googleapis.com/auth/userinfo.profile'
       ],
       prompt: 'consent',
-      // Add redirect_uri explicitly for security
       redirect_uri: process.env.GOOGLE_REDIRECT_URI 
     });
     res.redirect(authUrl);
   });
 
   // 2. Callback Endpoint - Handle OAuth response
-  router.post('/callback', async (req, res) => { // Changed to POST
+  router.post('/callback', async (req, res) => {
     try {
       const { code } = req.body;
 
-      if (!code) {
-        throw new Error('Authorization code missing');
-      }
+      if (!code) throw new Error('Authorization code missing');
 
-      // Exchange code for tokens with redirect_uri validation
       const { tokens } = await oauth2Client.getToken({
         code,
-        redirect_uri: process.env.GOOGLE_REDIRECT_URI // Must match initial request
+        redirect_uri: process.env.GOOGLE_REDIRECT_URI
       });
 
-      if (!tokens.access_token) {
-        throw new Error('No access token received');
-      }
+      if (!tokens.access_token) throw new Error('No access token received');
 
       oauth2Client.setCredentials(tokens);
 
-      // Fetch user data
       const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
       const userInfo = await oauth2.userinfo.get();
 
-      // Fetch calendar events
       const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
       const events = await calendar.events.list({
         calendarId: 'primary',
@@ -56,12 +48,12 @@ module.exports = (oauth2Client) => {
       res.json({
         user: userInfo.data,
         events: events.data.items,
-        tokens: tokens
+        tokens
       });
 
     } catch (error) {
       console.error('OAuth Error:', error);
-      res.status(400).json({ // Changed to 400 for client errors
+      res.status(400).json({
         error: 'authentication_failed',
         details: error.message.includes('invalid_grant') 
           ? 'Expired or invalid authorization code' 
@@ -70,5 +62,48 @@ module.exports = (oauth2Client) => {
     }
   });
 
+  // ✅ NEW: Add event to Google Calendar
+  router.post('/calendar/create', async (req, res) => {
+    try {
+      const { accessToken, summary, location, description, startDateTime, endDateTime } = req.body;
+
+      if (!accessToken) {
+        return res.status(401).json({ error: "Missing access token" });
+      }
+
+      oauth2Client.setCredentials({ access_token: accessToken });
+
+      const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+
+      const event = {
+        summary,
+        location,
+        description,
+        start: {
+          dateTime: startDateTime,
+          timeZone: 'America/New_York',
+        },
+        end: {
+          dateTime: endDateTime,
+          timeZone: 'America/New_York',
+        },
+      };
+
+      const response = await calendar.events.insert({
+        calendarId: 'primary',
+        resource: event,
+      });
+
+      res.status(201).json({
+        success: true,
+        eventLink: response.data.htmlLink,
+      });
+    } catch (error) {
+      console.error("Error adding event to Google Calendar:", error);
+      res.status(500).json({ error: "Failed to add event" });
+    }
+  });
+
+  // ✅ Make sure this is last
   return router;
 };
