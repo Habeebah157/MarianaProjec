@@ -6,6 +6,7 @@ import {
   HelpCircle,
   ArrowRight
 } from 'lucide-react';
+import RotatingText from '../RotatingText/RotatingText';
 
 // Feature Card Component
 const FeatureCard = ({ icon, title, description }) => (
@@ -67,16 +68,11 @@ const HomePage = () => {
       <header className="bg-white border-b">
         <div className="max-w-4xl mx-auto px-6 py-20 text-center">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            Find Your People.
+            <RotatingText/>
           </h1>
           <p className="text-lg md:text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
             Whether you're into climbing, coding, or coffee roasting — there's a space for you here.
           </p>
-          <img
-            src="https://undraw.co/api/illustrations/random?color=blue"
-            alt="Community illustration"
-            className="w-64 mx-auto mb-8"
-          />
           <button
             className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
             aria-label="Get Started"
