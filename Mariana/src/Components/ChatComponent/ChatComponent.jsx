@@ -20,13 +20,7 @@ const ChatComponent = ({ userId, business, hasBusiness }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState(null);
 
-  useEffect(() => {
-    if (hasBusiness && business && !users.find((u) => getUserId(u) === business.id)) {
-      setUsers((prev) => [...prev, business]); // Add business directly
-      setSelectedUserId(business.id);
-    }
-  }, [hasBusiness, business, users]);
-
+ 
   useEffect(() => {
     if (!userId) return;
 
@@ -38,6 +32,7 @@ const ChatComponent = ({ userId, business, hasBusiness }) => {
         if (!res.ok) throw new Error("Failed to fetch users");
         const data = await res.json();
         setUsers(data);
+        debugger;
       } catch (err) {
         console.error("Failed to fetch users", err);
         setError("Failed to load users.");
@@ -46,6 +41,16 @@ const ChatComponent = ({ userId, business, hasBusiness }) => {
 
     fetchUsers();
   }, [userId]);
+
+
+   useEffect(() => {
+    if ( business && !users.find((u) => getUserId(u) === business.id)) {
+      debugger;
+      setUsers((prev) => [...prev, business]);
+      setSelectedUserId(business.id);
+    }
+  }, [hasBusiness, business, users]);
+
 
   useEffect(() => {
     if (!selectedUserId) {
@@ -212,7 +217,6 @@ const ChatComponent = ({ userId, business, hasBusiness }) => {
 
   return (
     <div className="flex h-[32rem] max-w-4xl mx-auto border rounded shadow bg-white">
-      {/* Sidebar */}
       <div className="w-1/4 border-r overflow-auto">
         <h2 className="p-4 font-bold border-b">Users</h2>
         {users.length === 0 && <p className="p-4 text-gray-500">No users found</p>}

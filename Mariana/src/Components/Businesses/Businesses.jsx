@@ -79,14 +79,14 @@ export default function Businesses() {
               className="flex-shrink-0 w-64 bg-white border border-blue-200 rounded-xl shadow hover:shadow-lg transition duration-300"
             >
              <img
-  src={biz.image?.trim() || "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop"}
-  onError={(e) => {
-    e.target.onerror = null;
-    e.target.src = "https://images.unsplash.com/photo-1445116572660-236099ec97a0?w=400&h=300&fit=crop";
-  }}
-  alt={biz.name}
-  className="h-48 w-full object-cover"
-/>
+                src={biz.image?.trim() || "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop"}
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = "https://images.unsplash.com/photo-1445116572660-236099ec97a0?w=400&h=300&fit=crop";
+                }}
+                alt={biz.name}
+                className="h-48 w-full object-cover"
+              />
               <div className="p-4 flex flex-col justify-between h-56">
                 <div>
                   <h2 className="text-lg font-bold text-blue-900 mb-2">
