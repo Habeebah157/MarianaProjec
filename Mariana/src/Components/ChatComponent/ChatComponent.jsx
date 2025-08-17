@@ -2,10 +2,12 @@ import React, { useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
 import { FaCircle, FaMicrophone, FaStop } from "react-icons/fa";
 
+// Helper functions
 const getUserId = (user) => user?.id;
 const getUserName = (user) => user?.name || "Unknown";
 
 const ChatComponent = ({ userId, business, hasBusiness }) => {
+  // ---------------- State ----------------
   const [users, setUsers] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -14,13 +16,16 @@ const ChatComponent = ({ userId, business, hasBusiness }) => {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
 
-  const socketRef = useRef(null);
-  const messagesEndRef = useRef(null);
-
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState(null);
 
- 
+  // ---------------- Refs ----------------
+  const socketRef = useRef(null);
+  const messagesEndRef = useRef(null);
+
+  // ---------------- Effects ----------------
+
+  // 1️⃣ Fetch users
   useEffect(() => {
     if (!userId) return;
 
@@ -32,7 +37,6 @@ const ChatComponent = ({ userId, business, hasBusiness }) => {
         if (!res.ok) throw new Error("Failed to fetch users");
         const data = await res.json();
         setUsers(data);
-        debugger;
       } catch (err) {
         console.error("Failed to fetch users", err);
         setError("Failed to load users.");
@@ -42,16 +46,15 @@ const ChatComponent = ({ userId, business, hasBusiness }) => {
     fetchUsers();
   }, [userId]);
 
-
-   useEffect(() => {
-    if ( business && !users.find((u) => getUserId(u) === business.id)) {
-      debugger;
+  // 2️⃣ Add business if missing
+  useEffect(() => {
+    if (business && !users.find((u) => getUserId(u) === business.id)) {
       setUsers((prev) => [...prev, business]);
       setSelectedUserId(business.id);
     }
   }, [hasBusiness, business, users]);
 
-
+  // 3️⃣ Fetch messages for selected user
   useEffect(() => {
     if (!selectedUserId) {
       setMessages([]);
@@ -67,10 +70,7 @@ const ChatComponent = ({ userId, business, hasBusiness }) => {
       try {
         const res = await fetch(
           `http://localhost:9000/messages/${userId}/${selectedUserId}`,
-          {
-            headers: { token: localStorage.token },
-            signal,
-          }
+          { headers: { token: localStorage.token }, signal }
         );
         if (!res.ok) throw new Error("Failed to fetch messages");
         const data = await res.json();
@@ -90,6 +90,7 @@ const ChatComponent = ({ userId, business, hasBusiness }) => {
     return () => controller.abort();
   }, [selectedUserId, userId]);
 
+  // 4️⃣ Socket setup
   useEffect(() => {
     if (!userId) return;
 
@@ -121,11 +122,14 @@ const ChatComponent = ({ userId, business, hasBusiness }) => {
     };
   }, [userId, selectedUserId]);
 
+  // 5️⃣ Scroll to bottom on new messages
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
+
+  // ---------------- Event Handlers ----------------
 
   const handleSendMessage = () => {
     if (!newMessage.trim() || !socketRef.current) return;
@@ -195,9 +199,7 @@ const ChatComponent = ({ userId, business, hasBusiness }) => {
 
       const res = await fetch(`http://localhost:9000/messages/${userId}/send-voice`, {
         method: "POST",
-        headers: {
-          token: localStorage.token,
-        },
+        headers: { token: localStorage.token },
         body: formData,
       });
 
@@ -213,10 +215,12 @@ const ChatComponent = ({ userId, business, hasBusiness }) => {
     }
   };
 
+  // ---------------- JSX ----------------
   const selectedUser = users.find((u) => getUserId(u) === selectedUserId);
 
   return (
     <div className="flex h-[32rem] max-w-4xl mx-auto border rounded shadow bg-white">
+      {/* Users List */}
       <div className="w-1/4 border-r overflow-auto">
         <h2 className="p-4 font-bold border-b">Users</h2>
         {users.length === 0 && <p className="p-4 text-gray-500">No users found</p>}
@@ -235,7 +239,7 @@ const ChatComponent = ({ userId, business, hasBusiness }) => {
         </ul>
       </div>
 
-      {/* Chat area */}
+      {/* Chat Area */}
       <div className="flex-grow p-6 flex flex-col">
         {!selectedUser ? (
           <p className="text-gray-400">Select a user to start chatting</p>
@@ -245,6 +249,7 @@ const ChatComponent = ({ userId, business, hasBusiness }) => {
               Chat with {getUserName(selectedUser)}
             </h3>
 
+            {/* Messages */}
             <div
               className="flex-grow overflow-auto border rounded p-3 mb-4"
               style={{ maxHeight: "18rem" }}
@@ -285,6 +290,7 @@ const ChatComponent = ({ userId, business, hasBusiness }) => {
               <div ref={messagesEndRef} />
             </div>
 
+            {/* Message Input & Controls */}
             <div className="flex items-center gap-2">
               <input
                 type="text"

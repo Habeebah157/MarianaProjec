@@ -5,8 +5,9 @@ import ChatComponent from "../ChatComponent/ChatComponent";
 const Messages = () => {
   const [loggedInUserId, setLoggedInUserId] = useState(null);
   const location = useLocation();
-  const business = location.state.business.name;
-  console.log("business, now", location.state.business.name)
+  const business = location.state?.business;
+
+  console.log("business, now", location.state?.business)
 
   useEffect(() => {
     const fetchUser = async () => {
