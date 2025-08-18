@@ -6,8 +6,7 @@ const Messages = () => {
   const [loggedInUserId, setLoggedInUserId] = useState(null);
   const location = useLocation();
   const business = location.state?.business;
-
-  console.log("business, now", location.state?.business)
+  console.log("Business from location state:", business);
 
   useEffect(() => {
     const fetchUser = async () => {

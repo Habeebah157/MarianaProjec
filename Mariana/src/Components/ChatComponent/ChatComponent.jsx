@@ -2,12 +2,10 @@ import React, { useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
 import { FaCircle, FaMicrophone, FaStop } from "react-icons/fa";
 
-// Helper functions
 const getUserId = (user) => user?.id;
 const getUserName = (user) => user?.name || "Unknown";
 
 const ChatComponent = ({ userId, business, hasBusiness }) => {
-  // ---------------- State ----------------
   const [users, setUsers] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -19,13 +17,10 @@ const ChatComponent = ({ userId, business, hasBusiness }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState(null);
 
-  // ---------------- Refs ----------------
   const socketRef = useRef(null);
   const messagesEndRef = useRef(null);
 
-  // ---------------- Effects ----------------
 
-  // 1️⃣ Fetch users
   useEffect(() => {
     if (!userId) return;
 
@@ -46,15 +41,20 @@ const ChatComponent = ({ userId, business, hasBusiness }) => {
     fetchUsers();
   }, [userId]);
 
-  // 2️⃣ Add business if missing
   useEffect(() => {
-    if (business && !users.find((u) => getUserId(u) === business.id)) {
-      setUsers((prev) => [...prev, business]);
-      setSelectedUserId(business.id);
+    const businessId = business?.id;
+    const exists = users.some((u) => getUserId(u) === businessId);
+    console.log("Business exists in users list:", business?.id);
+
+    if (business && !exists) {
+        setUsers(prev => {
+        const updated = [...prev, business];
+        console.log("Business added to users list:", updated); 
+        return updated;
+    });
     }
   }, [hasBusiness, business, users]);
 
-  // 3️⃣ Fetch messages for selected user
   useEffect(() => {
     if (!selectedUserId) {
       setMessages([]);
@@ -90,7 +90,7 @@ const ChatComponent = ({ userId, business, hasBusiness }) => {
     return () => controller.abort();
   }, [selectedUserId, userId]);
 
-  // 4️⃣ Socket setup
+
   useEffect(() => {
     if (!userId) return;
 
@@ -122,14 +122,12 @@ const ChatComponent = ({ userId, business, hasBusiness }) => {
     };
   }, [userId, selectedUserId]);
 
-  // 5️⃣ Scroll to bottom on new messages
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
 
-  // ---------------- Event Handlers ----------------
 
   const handleSendMessage = () => {
     if (!newMessage.trim() || !socketRef.current) return;
@@ -215,7 +213,7 @@ const ChatComponent = ({ userId, business, hasBusiness }) => {
     }
   };
 
-  // ---------------- JSX ----------------
+
   const selectedUser = users.find((u) => getUserId(u) === selectedUserId);
 
   return (
@@ -225,9 +223,9 @@ const ChatComponent = ({ userId, business, hasBusiness }) => {
         <h2 className="p-4 font-bold border-b">Users</h2>
         {users.length === 0 && <p className="p-4 text-gray-500">No users found</p>}
         <ul>
-          {users.map((user) => (
+          {users.map((user, index) => (
             <li
-              key={getUserId(user)}
+              key={`${getUserId(user)}-${index}`} // ensures uniqueness even for duplicate IDs
               onClick={() => setSelectedUserId(getUserId(user))}
               className={`cursor-pointer p-3 border-b hover:bg-gray-100 ${
                 selectedUserId === getUserId(user) ? "bg-blue-100 font-semibold" : ""
@@ -239,7 +237,6 @@ const ChatComponent = ({ userId, business, hasBusiness }) => {
         </ul>
       </div>
 
-      {/* Chat Area */}
       <div className="flex-grow p-6 flex flex-col">
         {!selectedUser ? (
           <p className="text-gray-400">Select a user to start chatting</p>
