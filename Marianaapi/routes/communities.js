@@ -60,6 +60,38 @@ router.get("/:id", verifyToken, async (req, res) => {
     res.status(500).json({ error: "Failed to fetch community" });
   }
 });
+router.patch("/changeownership/:id", verifyToken, async (req, res) => {
+  const { id } = req.params;  
+  const { newOwnerId } = req.body;
+  const userId = req.user.id;
+  if (!newOwnerId) {
+    return res.status(400).json({ error: "New owner ID is required" });
+  } 
+  try {  
+    const check = await pool.query(
+      `SELECT * FROM communities WHERE id = $1 AND creator_id = $2`,
+      [id, userId]
+    );    
+
+    if (check.rowCount === 0) {   
+      return res.status(404).json({ error: "Community not found or unauthorized" });
+    }
+    const update = await pool.query(    
+      `UPDATE communities
+       SET creator_id = $1, updated_at = NOW()
+       WHERE id = $2
+       RETURNING *`,
+      [newOwnerId, id]
+    );
+    if (update.rowCount === 0) {
+      return res.status(404).json({ error: "Community not found" });
+    }
+    res.json({ success: true, community: update.rows[0] });
+  } catch (error) {
+    console.error("Error changing community ownership:", error);
+    res.status(500).json({ error: "Failed to change ownership" });
+  } 
+});
 
 router.patch("/:id", verifyToken, async (req, res) => {
   const { id } = req.params;
@@ -102,10 +134,6 @@ router.delete("/:id", verifyToken, async (req, res) => {
       return res.status(404).json({ error: "Community not found" });
     }
 
-    // Optional: Check if current user is creator
-    // if (check.rows[0].creator_id !== userId) {
-    //   return res.status(403).json({ error: "Not authorized to delete this community" });
-    // }
 
     await pool.query(`DELETE FROM communities WHERE id = $1`, [id]);
 

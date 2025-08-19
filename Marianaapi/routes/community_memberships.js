@@ -3,7 +3,6 @@ const router = express.Router();
 const { verifyToken } = require("../middleware/authorization");
 const pool = require("../db.js");
 
-// GET all members of a specific community
 router.get("/community/:communityId", verifyToken, async (req, res) => {
   try {
     const communityId = req.params.communityId;
@@ -23,7 +22,6 @@ router.get("/community/:communityId", verifyToken, async (req, res) => {
   }
 });
 
-// GET a specific membership by ID
 router.get("/:id", verifyToken, async (req, res) => {
   try {
     const { id } = req.params;

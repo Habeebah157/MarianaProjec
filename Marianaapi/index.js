@@ -56,6 +56,7 @@ app.use("/eventAttendance", require("./routes/event_attendees.js"));
 app.use("/businesses", require("./routes/businesses.js"));
 app.use("/business-users", require("./routes/business_users.js"));
 app.use("/messages", require("./routes/messages.js"))
+app.use("/communities", require("./routes/communities.js"));
 
 
 
