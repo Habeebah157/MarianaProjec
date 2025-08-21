@@ -57,6 +57,7 @@ app.use("/businesses", require("./routes/businesses.js"));
 app.use("/business-users", require("./routes/business_users.js"));
 app.use("/messages", require("./routes/messages.js"))
 app.use("/communities", require("./routes/communities.js"));
+app.use("/communitypost", require("./routes/community_post.js"))
 
 
 

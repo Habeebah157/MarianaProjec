@@ -1,33 +1,27 @@
-import js from "@eslint/js";
-import globals from "globals";
-import reactHooks from "eslint-plugin-react-hooks";
-import reactRefresh from "eslint-plugin-react-refresh";
+// eslint.config.js
+const js = require("@eslint/js");
+const globals = require("globals");
 
-export default [
-  { ignores: ["dist"] },
+module.exports = [
+  // Ignore folders
+  { ignores: ["dist", "node_modules", "build"] },
+
+  // Backend JavaScript files (Node.js environment)
   {
-    files: ["**/*.{js,jsx}"],
+    files: ["**/*.js"],
     languageOptions: {
-      ecmaVersion: 2020,
-      globals: globals.browser,
-      parserOptions: {
-        ecmaVersion: "latest",
-        ecmaFeatures: { jsx: true },
-        sourceType: "module",
+      ecmaVersion: 2022,
+      sourceType: "commonjs", // Enables `require` instead of ES modules
+      globals: {
+        ...globals.node, // ✅ Enables: process, require, module, __dirname, etc.
       },
-    },
-    plugins: {
-      "react-hooks": reactHooks,
-      "react-refresh": reactRefresh,
     },
     rules: {
       ...js.configs.recommended.rules,
-      ...reactHooks.configs.recommended.rules,
-      "no-unused-vars": ["error", { varsIgnorePattern: "^[A-Z_]" }],
-      "react-refresh/only-export-components": [
-        "warn",
-        { allowConstantExport: true },
-      ],
+      "no-unused-vars": ["error", { varsIgnorePattern: "^(req|res|next|_" }],
+      "no-console": "warn",
+      "semi": ["error", "always"],
+      "quotes": ["error", "single"],
     },
   },
 ];
