@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
-import { fetchCommunities } from '../../api/communityApi' // Adjust path as needed
+import { fetchCommunities } from '../../api/communityApi'; // Fixed: added missing semicolon
 
 export default function CommunitiesList() {
   const navigate = useNavigate();
@@ -10,17 +10,17 @@ export default function CommunitiesList() {
   useEffect(() => {
     const loadCommunities = async () => {
       try {
-        const data = await fetchCommunities(); 
+        const data = await fetchCommunities();
+
         console.log("Fetched communities:", data);
 
         if (data.success && Array.isArray(data.communities)) {
-          // Map the data to include a mock 'members' count for now
           const formatted = data.communities.map(community => ({
             id: community.id,
             name: community.name,
             description: community.description,
-            members: "10k", // 🔔 Placeholder — replace with real count later if available
-            is_public: community.is_public
+            members: community.members_count || "10k", // Better key
+            is_public: community.is_public,
           }));
           setCommunities(formatted);
         } else {
@@ -28,14 +28,15 @@ export default function CommunitiesList() {
         }
       } catch (err) {
         console.error("Failed to load communities", err);
-        // Optional: fallback to mock data
+        // Fallback mock data
         setCommunities([
           {
             id: "fallback-1",
             name: "Web Dev Enthusiasts",
             description: "A community for passionate web developers...",
-            members: "10k"
-          }
+            members: "10k",
+            is_public: true,
+          },
         ]);
       } finally {
         setLoading(false);
@@ -45,8 +46,13 @@ export default function CommunitiesList() {
     loadCommunities();
   }, []);
 
-  const handleClick = (communityName) => {
-    navigate(`/community/${communityName}`);
+  const handleClick = (community) => {
+    navigate(`/community/${community.name}`, {
+      state: {
+        communityId: community.id,
+        communityName: community.name
+      },
+    });
   };
 
   if (loading) {
@@ -64,13 +70,11 @@ export default function CommunitiesList() {
           {communities.map((community) => (
             <div
               key={community.id}
-              className="border border-gray-200 rounded-md p-3 hover:shadow-sm transition"
+              className="border border-gray-200 rounded-md p-3 hover:shadow-sm transition cursor-pointer"
+              onClick={() => handleClick(community)} // Pass full object
             >
               <div className="flex items-center justify-between mb-1">
-                <h2
-                  className="text-sm font-semibold hover:underline cursor-pointer"
-                  onClick={() => handleClick(community.name)}
-                >
+                <h2 className="text-sm font-semibold hover:underline">
                   {community.name}
                 </h2>
                 <span className="text-xs text-gray-500">
